@@ -11,21 +11,9 @@ class Pin:
     def __init__(self):
         pass
 
-    '''
-    @property
-    def is_waiting(self) -> bool:
-        return True
-    '''
-
     @property
     def actor(self) -> "Actor":
         return None
-
-    '''
-    @property
-    def is_accepting(self) -> bool:
-        return False
-    '''
 
     def accept(self, msg: Message) -> None:
         print('Ignored message!')
