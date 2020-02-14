@@ -1,2 +1,2 @@
 # PaCoS
-PA(rallel) CO(mputation) S(imulator)
+Pa(rallel) Co(mputation) S(imulator)
