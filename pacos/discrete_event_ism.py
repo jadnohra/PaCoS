@@ -22,6 +22,7 @@ class IsmEngine(Engine):
     def __init__(self):
         super().__init__()
         self._impulses = []
+        self.frame = -1
 
     def add_impulse(self, impulse: Impulse):
         self._impulses.append(impulse)
@@ -30,14 +31,21 @@ class IsmEngine(Engine):
         for impulse in self._impulses:
             impulse.call(self)
 
-    def run(self, max_steps=100, print_steps=False) -> None:
+    def _run_frame(self) -> None:
+        return super().run(-1, False)
+
+    def get_stamp(self) -> str:
+        return '{}.{}'.format(self.frame, super().get_stamp())
+
+    def run(self, max_frames=20, print_frames=False) -> None:
         self._init_run()
-        step = 0
+        self.frame = 0
         self._call_impulses()
-        while step < max_steps:
-            if print_steps:
-                print('step', step)
-            if len(self._msg_pool):
-                self._pop_msg()
-            step = step + 1
+        while self.frame < max_frames:
+            if print_frames:
+                print('frame', self.frame)
+            de_steps = self._run_frame()
+            if print_frames:
+                print('steps', de_steps)
+            self.frame = self.frame + 1
             self._call_impulses()

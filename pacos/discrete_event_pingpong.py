@@ -37,6 +37,10 @@ class PingActor(Actor):
         self.out_pin = None
 
     @property
+    def name(self) -> str:
+        return 'ping'
+
+    @property
     def pins(self) -> List[Pin]:
         return [self.in_pin]
 
@@ -62,6 +66,10 @@ class PongActor(Actor):
     def __init__(self):
         super().__init__()
         self.in_pin = BasicPin(self, waiting=True, accepting=True)
+
+    @property
+    def name(self) -> str:
+        return 'pong'
 
     @property
     def pins(self) -> List[Pin]:

@@ -1,15 +1,21 @@
-from typing import List
 import random
+import copy
+from typing import List
 from .discrete_event_ism import *
 
 
 class BasicPin(IsmPin):
-    def __init__(self, actor: Actor, waiting=False, accepting=False):
+    def __init__(self, actor: Actor, name: str, waiting=False, accepting=False):
         super().__init__()
+        self._name = name
         self._is_waiting = waiting
         self._is_accepting = accepting
         self._actor = actor
         self.msgs = []
+
+    @property
+    def name(self) -> str:
+        return self._name
 
     @property
     def is_waiting(self) -> bool:
@@ -33,9 +39,14 @@ class BasicPin(IsmPin):
 class BestEffortActor(Actor):
     def __init__(self):
         super().__init__()
-        self.in_data_pin = BasicPin(self, waiting=True, accepting=True)
-        self.in_trigger_pin = BasicPin(self, waiting=True, accepting=True)
+        self.in_data_pin = BasicPin(self, 'data', waiting=True, accepting=True)
+        self.in_trigger_pin = BasicPin(self, 'trigger', waiting=True,
+                                       accepting=True)
         self.triggered_count = 0
+
+    @property
+    def name(self) -> str:
+        return 'be'
 
     @property
     def pins(self) -> List[Pin]:
@@ -43,9 +54,6 @@ class BestEffortActor(Actor):
 
     def call(self, engine: "Engine") -> None:
         #print(len(self.in_trigger_pin.msgs), len(self.in_data_pin.msgs))
-        overtriggered = len(self.in_trigger_pin.msgs) - 1
-        if overtriggered > 0:
-            print('overtriggered by {}'.format(overtriggered))
         starving = len(self.in_trigger_pin.msgs) - len(self.in_data_pin.msgs)
         if starving > 0:
             print('starving by {}'.format(starving))
@@ -64,73 +72,88 @@ class BestEffortActor(Actor):
 
 
 class PeriodicImpulse(Impulse):
-    def __init__(self, msg: Message, period=1, offset=0):
+    def __init__(self, msg: Message, period=0, first_ticks_left=0):
         self.msg = msg
         self.period = period
-        self.ticks_left = offset + 1
+        self.ticks_left = first_ticks_left
 
     def call(self, engine: "IsmEngine"):
-        self.ticks_left = self.ticks_left - 1
         if self.ticks_left <= 0:
             self.ticks_left = self.period
-            engine.add_msg(self.msg)
+            engine.add_msg(copy.deepcopy(self.msg))
+        else:
+            self.ticks_left = self.ticks_left - 1
+
 
 
 class RandomPeriodicImpulse(Impulse):
-    def __init__(self, msg: Message, period, offset, variance, rand):
+    def __init__(self, msg: Message, period, first_ticks_left, variance, rand):
         self.msg = msg
         self.period = period
         self.variance = variance
         self.rand = rand
-        self.ticks_left = offset + 1
+        self.ticks_left = first_ticks_left
 
     def call(self, engine: "IsmEngine"):
-        self.ticks_left = self.ticks_left - 1
-        if self.ticks_left == 0:
+        if self.ticks_left <= 0:
             variance = self.rand.randint(-self.variance, self.variance)
             self.ticks_left = self.period + variance
-            engine.add_msg(self.msg)
+            engine.add_msg(copy.deepcopy(self.msg))
+        else:
+            self.ticks_left = self.ticks_left - 1
 
 
 def run_besteffort_perfect():
     engine = IsmEngine()
     actor = BestEffortActor()
-    timer = PeriodicImpulse(Message(actor.in_trigger_pin, 'timer'), 2, 1)
-    data = PeriodicImpulse(Message(actor.in_data_pin, 'data'), 2, 0)
+    timer = PeriodicImpulse(Message(actor.in_trigger_pin, 'timer'), 0, 1)
+    data = PeriodicImpulse(Message(actor.in_data_pin, 'data'), 0, 0)
     engine.add_actor(actor)
     engine.add_impulse(timer)
     engine.add_impulse(data)
-    engine.run(max_steps=30)
+    engine.run()
 
 
 def run_besteffort_inverted():
     # TODO express lagging, here, always lagging, after first starvation!
     engine = IsmEngine()
     actor = BestEffortActor()
-    timer = PeriodicImpulse(Message(actor.in_trigger_pin, 'timer'), 2, 0)
-    data = PeriodicImpulse(Message(actor.in_data_pin, 'data'), 2, 1)
+    timer = PeriodicImpulse(Message(actor.in_trigger_pin, 'timer'), 0, 0)
+    data = PeriodicImpulse(Message(actor.in_data_pin, 'data'), 0, 1)
     engine.add_actor(actor)
     engine.add_impulse(timer)
     engine.add_impulse(data)
-    engine.run(max_steps=30)
+    engine.run()
+
+def run_besteffort_starving():
+    engine = IsmEngine()
+    actor = BestEffortActor()
+    timer = PeriodicImpulse(Message(actor.in_trigger_pin, 'timer'), 0, 1)
+    data = PeriodicImpulse(Message(actor.in_data_pin, 'data'), 7, 1)
+    engine.add_actor(actor)
+    engine.add_impulse(data)
+    engine.add_impulse(timer)
+    engine.run()
 
 
 def run_besteffort_random():
     engine = IsmEngine()
     actor = BestEffortActor()
-    timer = PeriodicImpulse(Message(actor.in_trigger_pin, 'timer'), 4, 1)
-    data = RandomPeriodicImpulse(Message(actor.in_data_pin, 'data'), 4, 0, 2,
+    timer = PeriodicImpulse(Message(actor.in_trigger_pin, 'timer'), 1, 1)
+    data = RandomPeriodicImpulse(Message(actor.in_data_pin, 'data'), 4, 0, 3,
                                  random.Random(0))
     engine.add_actor(actor)
     engine.add_impulse(data)
     engine.add_impulse(timer)
-    engine.run(max_steps=100)
+    engine.run()
 
 
 def run_besteffort():
-    print(' === perfect ===')
-    run_besteffort_perfect()
-    print(' === inverted ===')
-    run_besteffort_inverted()
-    print(' === random ===')
-    run_besteffort_random()
+    print('=== perfect ===')
+    #run_besteffort_perfect()
+    print('=== inverted ===')
+    #run_besteffort_inverted()
+    print('=== starving ===')
+    run_besteffort_starving()
+    print('=== random ===')
+    #run_besteffort_random()
