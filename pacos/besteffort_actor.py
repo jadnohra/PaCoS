@@ -5,13 +5,14 @@ from .basic_pins import BasicIsmPin
 
 
 class BestEffortActor(Actor):
-    def __init__(self, out_pin=None, name=''):
+    def __init__(self, out_pin=None, name='', msg_xfm_func=None):
         super().__init__()
         self.in_data_pin = BasicIsmPin(self, 'data', waiting=True,
                                        accepting=True)
         self.in_trigger_pin = BasicIsmPin(self, 'trigger', waiting=True,
                                           accepting=True)
         self.out_pin = out_pin
+        self.msg_xfm_func = msg_xfm_func
         self._name = name
         self.triggered_count = 0
         self.state = 'INIT'
@@ -41,7 +42,9 @@ class BestEffortActor(Actor):
                                     data_msg.stamps[0])
         self.in_data_pin.msgs.clear()
         if self.out_pin:
-            engine.add_msg(data_msg.forward(self.out_pin))
+            send_msg = (self.msg_xfm_func(data_msg) if self.msg_xfm_func
+                        else data_msg)
+            engine.add_msg(send_msg.forward(self.out_pin))
 
     def call(self, engine: "Engine") -> None:
         self.state = 'ACTIVE'
@@ -64,8 +67,8 @@ class BestEffortActor(Actor):
 
 
 class SynchronizedBestEffortActor(BestEffortActor):
-    def __init__(self, out_pin=None, name=''):
-        super().__init__(out_pin=out_pin, name=name)
+    def __init__(self, out_pin=None, name='', msg_xfm_func=None):
+        super().__init__(out_pin=out_pin, name=name, msg_xfm_func=msg_xfm_func)
         self.in_trigger_pin.is_waiting = False
 
     def _trigger(self, engine: "Engine") -> None:

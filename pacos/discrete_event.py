@@ -23,13 +23,18 @@ class Stamp:
 
 
 class Message:
-    def __init__(self, target_pin: "Pin", payload: Any):
+    def __init__(self, target_pin: "Pin", payload: Any, wait_frames: int = 0):
         self.target_pin = target_pin
         self.payload = payload
         self.stamps = []
+        self.wait_frames = wait_frames
 
-    def forward(self, new_target_pin: "Pin") -> None:
+    def forward(self, new_target_pin: "Pin") -> "Message":
         self.target_pin = new_target_pin
+        return self
+
+    def delay(self, new_wait_frames: int) -> "Message":
+        self.wait_frames = new_wait_frames
         return self
 
     def stamp(self, new_stamp: Stamp) -> None:

@@ -58,6 +58,12 @@ class IsmEngine:
         for impulse in impulses:
             impulse.call(self)
 
+    def _check_msg_ready(self, msg) -> bool:
+        is_ready = msg.wait_frames <= 0 and msg.target_pin.is_waiting
+        if msg.wait_frames > 0:
+            msg.wait_frames = msg.wait_frames - 1
+        return is_ready
+
     def _run_frame(self) -> None:
         if self._synchronized:
             de_steps = 0
@@ -65,15 +71,15 @@ class IsmEngine:
             while not is_idle:
                 is_idle = True
                 new_msgs = [x for x in self._synch_msg_pool
-                           if x.target_pin.is_waiting]
+                           if self._check_msg_ready(x)]
                 if len(new_msgs):
                     is_idle = False
-                    for msg in new_msgs:
+                    for msg in new_msgs[:1]:
                         self.de_engine.add_msg(msg)
                         self._synch_msg_pool.remove(msg)
                     de_steps = (de_steps
                                 + self.de_engine.run(-1, False, engine=self))
-            return de_steps
+            return de_steps # TODO: or has-delayed msgs!
         else:
             return self.de_engine.run(-1, False, engine=self)
 
