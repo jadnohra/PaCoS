@@ -13,7 +13,7 @@ class Message:
         self.stamps.append(new_stamp)
 
     def __repr__(self) -> str:
-        return '{} -> {} : [{}]'.format(self.payload, self.target_pin.name,
+        return '{} -> {} @ [{}]'.format(self.payload, self.target_pin.name,
                                         ', '.join(self.stamps))
 
 
@@ -71,7 +71,7 @@ class Engine:
         msg.target_pin.accept(msg)
         msg.target_pin.actor.call(self)
         if '--log-msgs' in sys.argv:
-            print(msg)
+            print('MSG:', msg)
 
     def _init_run(self) -> None:
         for actor in self._actors:
