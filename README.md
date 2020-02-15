@@ -6,12 +6,12 @@ Pa(rallel) Co(mputation) S(imulator)
 ```
 $ python -m pacos
 === ping-pong ===
-pinged
-ponged
-pinged
-ponged
-pinged
-ponged
+ping
+pong
+ping
+pong
+ping
+pong
 === perfect ===
 * 0 OK-LAT(0)
 * 1 OK-LAT(0)

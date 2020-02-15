@@ -51,8 +51,8 @@ class PongActor(Actor):
 
     def _pong(self, engine: "Engine") -> None:
         for msg in self.in_pin.msgs:
-            print('pinged')
-            engine.add_msg(Message(msg.payload, 'ponged'))
+            print('ping')
+            engine.add_msg(Message(msg.payload, 'pong'))
         self.in_pin.msgs.clear()
 
     def init_call(self, engine: "Engine") -> None:
