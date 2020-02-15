@@ -28,6 +28,10 @@ class Message:
         self.payload = payload
         self.stamps = []
 
+    def forward(self, new_target_pin: "Pin") -> None:
+        self.target_pin = new_target_pin
+        return self
+
     def stamp(self, new_stamp: Stamp) -> None:
         self.stamps.append(new_stamp)
 
