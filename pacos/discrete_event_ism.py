@@ -65,9 +65,12 @@ class IsmEngine:
             while not is_idle:
                 is_idle = True
                 new_msgs = [x for x in self._synch_msg_pool
-                           if x.target_pin.is_accepting()]
+                           if x.target_pin.is_waiting]
                 if len(new_msgs):
                     is_idle = False
+                    for msg in new_msgs:
+                        self.de_engine.add_msg(msg)
+                        self._synch_msg_pool.remove(msg)
                     de_steps = (de_steps
                                 + self.de_engine.run(-1, False, engine=self))
             return de_steps

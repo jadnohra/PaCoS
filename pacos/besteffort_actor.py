@@ -34,6 +34,15 @@ class BestEffortActor(Actor):
         else:
             return self.state
 
+    def _trigger(self, engine: "Engine") -> None:
+        data_msg = self.in_data_pin.msgs[0]
+        self.health_latency = engine.compare_stamps(
+                                    engine.get_stamp(),
+                                    data_msg.stamps[0])
+        self.in_data_pin.msgs.clear()
+        if self.out_pin:
+            engine.add_msg(data_msg.forward(self.out_pin))
+
     def call(self, engine: "Engine") -> None:
         self.state = 'ACTIVE'
         if len(self.in_trigger_pin.msgs):
@@ -47,14 +56,26 @@ class BestEffortActor(Actor):
                                                 len(self.in_data_pin.msgs)-1)
                 self.in_data_pin.msgs = self.in_data_pin.msgs[-1:]
             if len(self.in_data_pin.msgs) > 0:
-                data_msg = self.in_data_pin.msgs[0]
-                self.health_latency = engine.compare_stamps(
-                                            engine.get_stamp(),
-                                            data_msg.stamps[0])
-                self.in_data_pin.msgs.clear()
-                if self.out_pin:
-                    engine.add_msg(data_msg.forward(self.out_pin))
+                self._trigger(engine)
             print('*', engine.frame,  self.health)
         else:
             pass
             # print(self.health)
+
+
+class SynchronizedBestEffortActor(BestEffortActor):
+    def __init__(self, out_pin=None, name=''):
+        super().__init__(out_pin=out_pin, name=name)
+        self.in_trigger_pin.is_waiting = False
+
+    def _trigger(self, engine: "Engine") -> None:
+        self.in_data_pin.is_waiting = True
+        self.in_trigger_pin.is_waiting = False
+        super()._trigger(engine)
+
+
+    def call(self, engine: "Engine") -> None:
+        if len(self.in_data_pin.msgs):
+            self.in_data_pin.is_waiting = False
+            self.in_trigger_pin.is_waiting = True
+        super().call(engine)

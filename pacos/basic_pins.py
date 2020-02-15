@@ -19,6 +19,10 @@ class BasicIsmPin(IsmPin):
     def is_waiting(self) -> bool:
         return self._is_waiting
 
+    @is_waiting.setter
+    def is_waiting(self, value: bool) -> None:
+        self._is_waiting = value
+
     @property
     def actor(self) -> "Actor":
         return self._actor
@@ -26,6 +30,10 @@ class BasicIsmPin(IsmPin):
     @property
     def is_accepting(self) -> bool:
         return self._is_accepting
+
+    @is_accepting.setter
+    def is_accepting(self, value: bool) -> None:
+        self._is_accepting = value
 
     def accept(self, msg: Message):
         if not self._is_waiting:
