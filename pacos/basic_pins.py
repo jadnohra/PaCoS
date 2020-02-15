@@ -32,3 +32,6 @@ class BasicIsmPin(IsmPin):
             print('Dropped message!')
             return
         self.msgs.append(msg)
+
+    def __repr__(self) -> str:
+        return self._name

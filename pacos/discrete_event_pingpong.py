@@ -7,7 +7,7 @@ class PingActor(Actor):
     def __init__(self, ping_count):
         super().__init__()
         self._pings_left = ping_count
-        self.in_pin = BasicIsmPin(self, 'in', waiting=False, accepting=False)
+        self.in_pin = BasicIsmPin(self, 'ping_in', waiting=False, accepting=False)
         self.out_pin = None
 
     @property
@@ -39,7 +39,7 @@ class PingActor(Actor):
 class PongActor(Actor):
     def __init__(self):
         super().__init__()
-        self.in_pin = BasicIsmPin(self, 'in', waiting=True, accepting=True)
+        self.in_pin = BasicIsmPin(self, 'pong_in', waiting=True, accepting=True)
 
     @property
     def name(self) -> str:
