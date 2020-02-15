@@ -43,6 +43,9 @@ class BestEffortActor(Actor):
         self.in_trigger_pin = BasicPin(self, 'trigger', waiting=True,
                                        accepting=True)
         self.triggered_count = 0
+        self.state = 'INIT'
+        self.health_rate = 'N/A'
+        self.health_latency = 'N/A'
 
     @property
     def name(self) -> str:
@@ -52,7 +55,28 @@ class BestEffortActor(Actor):
     def pins(self) -> List[Pin]:
         return [self.in_data_pin, self.in_trigger_pin]
 
+    @property
+    def health(self) -> str:
+        return '{}-{}-{}'.format(self.state, self.health_rate,
+                                 self.health_latency)
+
     def call(self, engine: "Engine") -> None:
+        self.state = 'ACTIVE'
+        if len(self.in_trigger_pin.msgs):
+            self.in_trigger_pin.msgs.clear()
+            self.health_rate = 'OK'
+            if len(self.in_data_pin.msgs) == 0:
+                self.health_rate = 'STARVING'
+                return
+            elif len(self.in_data_pin.msgs) > 1:
+                self.health_rate = 'DROPPING'
+                self.in_data_pin.msgs = self.in_data_pin.msgs[-1:]
+            data_msg = self.in_data_pin.msgs[0]
+            # TODO check health latency
+            self.in_data_pin.msgs.clear()
+        print(self.health)
+
+    def _call(self, engine: "Engine") -> None:
         #print(len(self.in_trigger_pin.msgs), len(self.in_data_pin.msgs))
         starving = len(self.in_trigger_pin.msgs) - len(self.in_data_pin.msgs)
         if starving > 0:
