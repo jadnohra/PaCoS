@@ -63,6 +63,7 @@ class PongActor(Actor):
 
 
 def run_pingpong():
+    print('=== ping-pong ===')
     engine = Engine()
     ping = PingActor(3)
     pong = PongActor()

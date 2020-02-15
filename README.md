@@ -5,6 +5,7 @@ Pa(rallel) Co(mputation) S(imulator)
 
 ```
 $ python -m pacos
+=== ping-pong ===
 pinged
 ponged
 pinged

@@ -1,5 +1,5 @@
-from .discrete_event_pingpong import run_pingpong
-from .discrete_event_ism_besteffort import run_besteffort
+from .example_pingpong import run_pingpong
+from .example_besteffort import run_besteffort
 
 
 run_pingpong()
