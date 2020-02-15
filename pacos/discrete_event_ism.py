@@ -1,7 +1,7 @@
-from .discrete_event import *
+from . import discrete_event as de
 
 
-class IsmPin(Pin):
+class IsmPin(de.Pin):
     def __init__(self):
         super().__init__()
 
@@ -18,11 +18,18 @@ class Impulse:
     def call(self, engine: "IsmEngine") -> None:
         pass
 
-class IsmEngine(Engine):
+class IsmEngine:
     def __init__(self):
-        super().__init__()
+        self.de_engine = de.Engine()
         self._impulses = []
         self.frame = -1
+
+    def add_actor(self, actor: de.Actor):
+        self.de_engine.add_actor(actor)
+
+    def add_msg(self, msg: de.Message):
+        self.de_engine.add_msg(msg)
+
 
     def add_impulse(self, impulse: Impulse):
         self._impulses.append(impulse)
@@ -32,13 +39,14 @@ class IsmEngine(Engine):
             impulse.call(self)
 
     def _run_frame(self) -> None:
-        return super().run(-1, False)
+        return self.de_engine.run(-1, False)
 
     def get_stamp(self) -> str:
-        return '{}.{}'.format(self.frame, super().get_stamp())
+        return '{}.{}'.format(self.frame,
+                              self.de_engine.get_stamp())
 
     def run(self, max_frames=20, print_frames=False) -> None:
-        self._init_run()
+        self.de_engine._init_run()
         self.frame = 0
         self._call_impulses()
         while self.frame < max_frames:

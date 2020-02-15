@@ -1,39 +1,13 @@
 from typing import List
 from .discrete_event import *
-
-
-class BasicPin(Pin):
-    def __init__(self, actor: Actor, waiting=False, accepting=False):
-        super().__init__()
-        self._is_waiting = waiting
-        self._is_accepting = accepting
-        self._actor = actor
-        self.msgs = []
-
-    @property
-    def is_waiting(self) -> bool:
-        return self._is_waiting
-
-    @property
-    def actor(self) -> "Actor":
-        return self._actor
-
-    @property
-    def is_accepting(self) -> bool:
-        return self._is_accepting
-
-    def accept(self, msg: Message):
-        if not self._is_waiting:
-            print('Dropped message!')
-            return
-        self.msgs.append(msg)
+from .basic_pins import BasicIsmPin
 
 
 class PingActor(Actor):
     def __init__(self, ping_count):
         super().__init__()
         self._pings_left = ping_count
-        self.in_pin = BasicPin(self, waiting=False, accepting=False)
+        self.in_pin = BasicIsmPin(self, 'in', waiting=False, accepting=False)
         self.out_pin = None
 
     @property
@@ -65,7 +39,7 @@ class PingActor(Actor):
 class PongActor(Actor):
     def __init__(self):
         super().__init__()
-        self.in_pin = BasicPin(self, waiting=True, accepting=True)
+        self.in_pin = BasicIsmPin(self, 'in', waiting=True, accepting=True)
 
     @property
     def name(self) -> str:
