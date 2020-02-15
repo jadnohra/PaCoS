@@ -1,3 +1,4 @@
+import copy
 from . import discrete_event as de
 
 
@@ -19,11 +20,12 @@ class Impulse:
         pass
 
 class IsmEngine:
-    def __init__(self, id: str ='ie'):
+    def __init__(self, id: str ='ie', impulse_rand=None):
         self._id = id
         self.de_engine = de.Engine('de')
         self._impulses = []
         self._frame = -1
+        self._impulse_rand = impulse_rand
 
     @property
     def id(self) -> str:
@@ -44,7 +46,12 @@ class IsmEngine:
         self._impulses.append(impulse)
 
     def _call_impulses(self):
-        for impulse in self._impulses:
+        if self._impulse_rand:
+            impulses = copy.copy(self._impulses)
+            self._impulse_rand.shuffle(impulses)
+        else:
+            impulses = reversed(self._impulses)
+        for impulse in impulses:
             impulse.call(self)
 
     def _run_frame(self) -> None:

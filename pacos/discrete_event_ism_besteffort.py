@@ -66,14 +66,25 @@ def run_besteffort_perfect():
                             0, 0)
     data = PeriodicImpulse(lambda _: Message(actor.in_data_pin, 'data'), 0, 0)
     engine.add_actor(actor)
+    engine.add_impulse(data)
+    engine.add_impulse(timer)
+    engine.run(max_frames=5)
+
+
+def run_besteffort_inverted():
+    engine = IsmEngine()
+    actor = BestEffortActor()
+    timer = PeriodicImpulse(lambda _: Message(actor.in_trigger_pin, 'timer'),
+                            0, 0)
+    data = PeriodicImpulse(lambda _: Message(actor.in_data_pin, 'data'), 0, 0)
+    engine.add_actor(actor)
     engine.add_impulse(timer)
     engine.add_impulse(data)
     engine.run(max_frames=5)
 
 
-def run_besteffort_inverted():
-    # TODO express lagging, here, always lagging, after first starvation!
-    engine = IsmEngine()
+def run_besteffort_nondet_impulse():
+    engine = IsmEngine(impulse_rand = random.Random(0))
     actor = BestEffortActor()
     timer = PeriodicImpulse(lambda _: Message(actor.in_trigger_pin, 'timer'),
                             0, 0)
@@ -81,7 +92,7 @@ def run_besteffort_inverted():
     engine.add_actor(actor)
     engine.add_impulse(data)
     engine.add_impulse(timer)
-    engine.run(max_frames=5)
+    engine.run(max_frames=10)
 
 
 def run_besteffort_starving():
@@ -126,9 +137,11 @@ def run_besteffort():
     #run_besteffort_perfect()
     print('=== inverted ===')
     #run_besteffort_inverted()
+    print('=== nondet-impulse ===')
+    run_besteffort_nondet_impulse()
     print('=== starving ===')
     #run_besteffort_starving()
     print('=== dropping ===')
-    run_besteffort_dropping()
+    #run_besteffort_dropping()
     print('=== random ===')
     #run_besteffort_random()
