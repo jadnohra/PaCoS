@@ -30,7 +30,7 @@ class BestEffortActor(Actor):
 
     @property
     def health(self) -> str:
-        return '{}-{}-{}'.format(self.state, self.health_rate,
+        return '{}-{}-({})'.format(self.state, self.health_rate,
                                  self.health_latency)
 
     def call(self, engine: "Engine") -> None:
@@ -45,23 +45,26 @@ class BestEffortActor(Actor):
                 self.in_data_pin.msgs = self.in_data_pin.msgs[-1:]
             if len(self.in_data_pin.msgs) > 0:
                 data_msg = self.in_data_pin.msgs[0]
-                print(engine.compare_stamps(engine.get_stamp(),
-                                            data_msg.stamps[0]))
-                # TODO check health latency
+                self.health_latency = engine.compare_stamps(
+                                            engine.get_stamp(),
+                                            data_msg.stamps[0])
                 self.in_data_pin.msgs.clear()
-        print(self.health)
+            print('*', self.health)
+        else:
+            pass
+            # print(self.health)
 
 
 def run_besteffort_perfect():
     engine = IsmEngine()
     actor = BestEffortActor()
     timer = PeriodicImpulse(lambda _: Message(actor.in_trigger_pin, 'timer'),
-                            0, 1)
+                            0, 0)
     data = PeriodicImpulse(lambda _: Message(actor.in_data_pin, 'data'), 0, 0)
     engine.add_actor(actor)
     engine.add_impulse(timer)
     engine.add_impulse(data)
-    engine.run()
+    engine.run(max_frames=5)
 
 
 def run_besteffort_inverted():
@@ -70,11 +73,11 @@ def run_besteffort_inverted():
     actor = BestEffortActor()
     timer = PeriodicImpulse(lambda _: Message(actor.in_trigger_pin, 'timer'),
                             0, 0)
-    data = PeriodicImpulse(lambda _: Message(actor.in_data_pin, 'data'), 0, 1)
+    data = PeriodicImpulse(lambda _: Message(actor.in_data_pin, 'data'), 0, 0)
     engine.add_actor(actor)
-    engine.add_impulse(timer)
     engine.add_impulse(data)
-    engine.run()
+    engine.add_impulse(timer)
+    engine.run(max_frames=5)
 
 def run_besteffort_starving():
     engine = IsmEngine()
@@ -85,7 +88,7 @@ def run_besteffort_starving():
     engine.add_actor(actor)
     engine.add_impulse(data)
     engine.add_impulse(timer)
-    engine.run()
+    engine.run(max_frames=15)
 
 
 def run_besteffort_random():
@@ -98,15 +101,15 @@ def run_besteffort_random():
     engine.add_actor(actor)
     engine.add_impulse(data)
     engine.add_impulse(timer)
-    engine.run()
+    engine.run(max_frames=20)
 
 
 def run_besteffort():
     print('=== perfect ===')
     #run_besteffort_perfect()
     print('=== inverted ===')
-    #run_besteffort_inverted()
+    run_besteffort_inverted()
     print('=== starving ===')
-    run_besteffort_starving()
+    #run_besteffort_starving()
     print('=== random ===')
     #run_besteffort_random()

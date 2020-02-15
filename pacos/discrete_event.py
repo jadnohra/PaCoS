@@ -95,7 +95,7 @@ class Engine:
         msg.stamp(engine.get_stamp())
         msg.target_pin.accept(msg)
         msg.target_pin.actor.call(engine)
-        if '--log-msgs' in sys.argv:
+        if '--log' in sys.argv:
             print('MSG:', msg)
 
     def _init_run(self) -> None:
