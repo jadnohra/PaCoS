@@ -81,7 +81,7 @@ class Engine:
     def __init__(self, id: str = 'e'):
         self._id = id
         self._actors = []
-        self._msg_pool = []
+        self._msgs = []
         self.step = -1
 
     @property
@@ -92,10 +92,10 @@ class Engine:
         self._actors.append(actor)
 
     def add_msg(self, msg: Message):
-        self._msg_pool.append(msg)
+        self._msgs.append(msg)
 
     def _pop_msg(self, engine: Any) -> None:
-        msg = self._msg_pool.pop()
+        msg = self._msgs.pop()
         msg.stamp(engine.get_stamp())
         msg.target_pin.accept(msg)
         msg.target_pin.actor.call(engine)
@@ -113,7 +113,7 @@ class Engine:
             ) -> None:
         self._init_run()
         self.step = 0
-        while len(self._msg_pool) and (self.step < max_steps or max_steps < 0):
+        while len(self._msgs) and (self.step < max_steps or max_steps < 0):
             if print_steps:
                 print('step', self.step)
             self._pop_msg(engine if engine else self)

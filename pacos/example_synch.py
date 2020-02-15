@@ -8,7 +8,7 @@ from .besteffort_actor import BestEffortActor
 
 
 def run_synch_unsynch():
-    engine = IsmEngine()
+    engine = IsmEngine(synchronized=False)
     actor2 = BestEffortActor(name='A2')
     actor1 = BestEffortActor(name='A1', out_pin=actor2.in_data_pin)
     timer = PeriodicImpulse(lambda _: [
