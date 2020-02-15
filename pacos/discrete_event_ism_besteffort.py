@@ -30,8 +30,10 @@ class BestEffortActor(Actor):
 
     @property
     def health(self) -> str:
-        return '{}-{}-({})'.format(self.state, self.health_rate,
-                                 self.health_latency)
+        if self.state == 'ACTIVE':
+            return '{}-LAT({})'.format(self.health_rate, self.health_latency)
+        else:
+            return self.state
 
     def call(self, engine: "Engine") -> None:
         self.state = 'ACTIVE'
@@ -40,8 +42,10 @@ class BestEffortActor(Actor):
             self.health_rate = 'OK'
             if len(self.in_data_pin.msgs) == 0:
                 self.health_rate = 'STARVING'
+                self.health_latency = 'N/A'
             elif len(self.in_data_pin.msgs) > 1:
-                self.health_rate = 'DROPPING'
+                self.health_rate = 'DROPPING({})'.format(
+                                                len(self.in_data_pin.msgs)-1)
                 self.in_data_pin.msgs = self.in_data_pin.msgs[-1:]
             if len(self.in_data_pin.msgs) > 0:
                 data_msg = self.in_data_pin.msgs[0]
@@ -49,7 +53,7 @@ class BestEffortActor(Actor):
                                             engine.get_stamp(),
                                             data_msg.stamps[0])
                 self.in_data_pin.msgs.clear()
-            print('*', self.health)
+            print('*', engine.frame,  self.health)
         else:
             pass
             # print(self.health)
@@ -79,28 +83,41 @@ def run_besteffort_inverted():
     engine.add_impulse(timer)
     engine.run(max_frames=5)
 
+
 def run_besteffort_starving():
     engine = IsmEngine()
     actor = BestEffortActor()
     timer = PeriodicImpulse(lambda _: Message(actor.in_trigger_pin, 'timer'),
-                            0, 1)
-    data = PeriodicImpulse(lambda _: Message(actor.in_data_pin, 'data'), 7, 1)
+                            0, 0)
+    data = PeriodicImpulse(lambda _: Message(actor.in_data_pin, 'data'), 3, 3)
     engine.add_actor(actor)
-    engine.add_impulse(data)
     engine.add_impulse(timer)
-    engine.run(max_frames=15)
+    engine.add_impulse(data)
+    engine.run(max_frames=10)
+
+
+def run_besteffort_dropping():
+    engine = IsmEngine()
+    actor = BestEffortActor()
+    timer = PeriodicImpulse(lambda _: Message(actor.in_trigger_pin, 'timer'),
+                            2, 0)
+    data = PeriodicImpulse(lambda _: Message(actor.in_data_pin, 'data'), 0, 0)
+    engine.add_actor(actor)
+    engine.add_impulse(timer)
+    engine.add_impulse(data)
+    engine.run(max_frames=10)
 
 
 def run_besteffort_random():
     engine = IsmEngine()
     actor = BestEffortActor()
     timer = PeriodicImpulse(lambda _: Message(actor.in_trigger_pin, 'timer'),
-                            1, 1)
+                            0, 0)
     data = FuzzyPeriodicImpulse(lambda _: Message(actor.in_data_pin, 'data'),
-                                4, 0, 3, random.Random(0))
+                                3, 0, 3, random.Random(0))
     engine.add_actor(actor)
-    engine.add_impulse(data)
     engine.add_impulse(timer)
+    engine.add_impulse(data)
     engine.run(max_frames=20)
 
 
@@ -110,6 +127,8 @@ def run_besteffort():
     print('=== inverted ===')
     #run_besteffort_inverted()
     print('=== starving ===')
-    run_besteffort_starving()
+    #run_besteffort_starving()
+    print('=== dropping ===')
+    run_besteffort_dropping()
     print('=== random ===')
     #run_besteffort_random()

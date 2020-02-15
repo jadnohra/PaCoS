@@ -23,11 +23,15 @@ class IsmEngine:
         self._id = id
         self.de_engine = de.Engine('de')
         self._impulses = []
-        self.frame = -1
+        self._frame = -1
 
     @property
     def id(self) -> str:
         return self._id
+
+    @property
+    def frame(self) -> int:
+        return self._frame
 
     def add_actor(self, actor: de.Actor):
         self.de_engine.add_actor(actor)
@@ -47,7 +51,7 @@ class IsmEngine:
         return self.de_engine.run(-1, False, engine=self)
 
     def get_stamp(self) -> de.Stamp:
-        return de.Stamp().add(self._id, self.frame).update(
+        return de.Stamp().add(self._id, self._frame).update(
                                                     self.de_engine.get_stamp())
 
     def compare_stamps(self, ref: de.Stamp, other: de.Stamp) -> int:
@@ -55,13 +59,13 @@ class IsmEngine:
 
     def run(self, max_frames=20, print_frames=False) -> None:
         self.de_engine._init_run()
-        self.frame = 0
+        self._frame = 0
         self._call_impulses()
-        while self.frame < max_frames:
+        while self._frame < max_frames:
             if print_frames:
-                print('frame', self.frame)
+                print('frame', self._frame)
             de_steps = self._run_frame()
             if print_frames:
                 print('steps', de_steps)
-            self.frame = self.frame + 1
+            self._frame = self._frame + 1
             self._call_impulses()
