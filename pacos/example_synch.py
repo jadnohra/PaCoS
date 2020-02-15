@@ -5,8 +5,6 @@ from .periodic_impulses import PeriodicImpulse, FuzzyPeriodicImpulse
 from .besteffort_actor import BestEffortActor, SynchronizedBestEffortActor
 
 
-
-
 def run_synch_unsynch():
     engine = IsmEngine(synchronized=False)
     actor2 = BestEffortActor(name='A2')
