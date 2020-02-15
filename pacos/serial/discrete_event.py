@@ -41,8 +41,9 @@ class Message:
         self.stamps.append(new_stamp)
 
     def __repr__(self) -> str:
-        return '{} -> {} @ [{}]'.format(
-                            self.payload, self.target_pin.name,
+        return '{} -> {}:{} @ [{}]'.format(
+                            self.payload, self.target_pin.actor.name, 
+                            self.target_pin.name,
                             ', '.join([str(x) for x in self.stamps]))
 
 
