@@ -90,11 +90,11 @@ class Engine:
     def add_msg(self, msg: Message):
         self._msg_pool.append(msg)
 
-    def _pop_msg(self, stamper: Any) -> None:
+    def _pop_msg(self, engine: Any) -> None:
         msg = self._msg_pool.pop()
-        msg.stamp(stamper.get_stamp())
+        msg.stamp(engine.get_stamp())
         msg.target_pin.accept(msg)
-        msg.target_pin.actor.call(self)
+        msg.target_pin.actor.call(engine)
         if '--log-msgs' in sys.argv:
             print('MSG:', msg)
 
@@ -105,13 +105,13 @@ class Engine:
     def get_stamp(self) -> Stamp:
         return Stamp().add(self._id, self.step)
 
-    def run(self, max_steps=100, print_steps=False, stamper: Any = None
+    def run(self, max_steps=100, print_steps=False, engine: "Engine" = None
             ) -> None:
         self._init_run()
         self.step = 0
         while len(self._msg_pool) and (self.step < max_steps or max_steps < 0):
             if print_steps:
                 print('step', self.step)
-            self._pop_msg(stamper if stamper else self)
+            self._pop_msg(engine if engine else self)
             self.step = self.step + 1
         return self.step

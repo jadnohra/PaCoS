@@ -40,40 +40,24 @@ class BestEffortActor(Actor):
             self.health_rate = 'OK'
             if len(self.in_data_pin.msgs) == 0:
                 self.health_rate = 'STARVING'
-                return
             elif len(self.in_data_pin.msgs) > 1:
                 self.health_rate = 'DROPPING'
                 self.in_data_pin.msgs = self.in_data_pin.msgs[-1:]
-            data_msg = self.in_data_pin.msgs[0]
-            # TODO check health latency
-            self.in_data_pin.msgs.clear()
+            if len(self.in_data_pin.msgs) > 0:
+                data_msg = self.in_data_pin.msgs[0]
+                print(engine.compare_stamps(engine.get_stamp(),
+                                            data_msg.stamps[0]))
+                # TODO check health latency
+                self.in_data_pin.msgs.clear()
         print(self.health)
-
-    def _call(self, engine: "Engine") -> None:
-        #print(len(self.in_trigger_pin.msgs), len(self.in_data_pin.msgs))
-        starving = len(self.in_trigger_pin.msgs) - len(self.in_data_pin.msgs)
-        if starving > 0:
-            print('starving by {}'.format(starving))
-        overdriven = ((len(self.in_data_pin.msgs)
-                       - len(self.in_trigger_pin.msgs)) - 1)
-        if overdriven > 0:
-            print('overdriven by {}'.format(overdriven))
-        if len(self.in_trigger_pin.msgs):
-            self.in_trigger_pin.msgs.clear()
-            self.in_data_pin.msgs.clear()
-            self.triggered_count = self.triggered_count + 1
-            #print('triggered', self.triggered_count)
-        else:
-            # print('not triggered', self.triggered_count)
-            pass
-
 
 
 def run_besteffort_perfect():
     engine = IsmEngine()
     actor = BestEffortActor()
-    timer = PeriodicImpulse(Message(actor.in_trigger_pin, 'timer'), 0, 1)
-    data = PeriodicImpulse(Message(actor.in_data_pin, 'data'), 0, 0)
+    timer = PeriodicImpulse(lambda _: Message(actor.in_trigger_pin, 'timer'),
+                            0, 1)
+    data = PeriodicImpulse(lambda _: Message(actor.in_data_pin, 'data'), 0, 0)
     engine.add_actor(actor)
     engine.add_impulse(timer)
     engine.add_impulse(data)
@@ -84,8 +68,9 @@ def run_besteffort_inverted():
     # TODO express lagging, here, always lagging, after first starvation!
     engine = IsmEngine()
     actor = BestEffortActor()
-    timer = PeriodicImpulse(Message(actor.in_trigger_pin, 'timer'), 0, 0)
-    data = PeriodicImpulse(Message(actor.in_data_pin, 'data'), 0, 1)
+    timer = PeriodicImpulse(lambda _: Message(actor.in_trigger_pin, 'timer'),
+                            0, 0)
+    data = PeriodicImpulse(lambda _: Message(actor.in_data_pin, 'data'), 0, 1)
     engine.add_actor(actor)
     engine.add_impulse(timer)
     engine.add_impulse(data)
@@ -94,8 +79,9 @@ def run_besteffort_inverted():
 def run_besteffort_starving():
     engine = IsmEngine()
     actor = BestEffortActor()
-    timer = PeriodicImpulse(Message(actor.in_trigger_pin, 'timer'), 0, 1)
-    data = PeriodicImpulse(Message(actor.in_data_pin, 'data'), 7, 1)
+    timer = PeriodicImpulse(lambda _: Message(actor.in_trigger_pin, 'timer'),
+                            0, 1)
+    data = PeriodicImpulse(lambda _: Message(actor.in_data_pin, 'data'), 7, 1)
     engine.add_actor(actor)
     engine.add_impulse(data)
     engine.add_impulse(timer)
@@ -105,9 +91,10 @@ def run_besteffort_starving():
 def run_besteffort_random():
     engine = IsmEngine()
     actor = BestEffortActor()
-    timer = PeriodicImpulse(Message(actor.in_trigger_pin, 'timer'), 1, 1)
-    data = FuzzyPeriodicImpulse(Message(actor.in_data_pin, 'data'), 4, 0, 3,
-                                random.Random(0))
+    timer = PeriodicImpulse(lambda _: Message(actor.in_trigger_pin, 'timer'),
+                            1, 1)
+    data = FuzzyPeriodicImpulse(lambda _: Message(actor.in_data_pin, 'data'),
+                                4, 0, 3, random.Random(0))
     engine.add_actor(actor)
     engine.add_impulse(data)
     engine.add_impulse(timer)

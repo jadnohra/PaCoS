@@ -44,12 +44,14 @@ class IsmEngine:
             impulse.call(self)
 
     def _run_frame(self) -> None:
-        return self.de_engine.run(-1, False, stamper=self)
+        return self.de_engine.run(-1, False, engine=self)
 
     def get_stamp(self) -> de.Stamp:
         return de.Stamp().add(self._id, self.frame).update(
                                                     self.de_engine.get_stamp())
 
+    def compare_stamps(self, ref: de.Stamp, other: de.Stamp) -> int:
+        return other.get(self._id) - ref.get(self._id)
 
     def run(self, max_frames=20, print_frames=False) -> None:
         self.de_engine._init_run()
