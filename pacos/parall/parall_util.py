@@ -1,6 +1,7 @@
 from typing import List, Tuple, Dict
 import multiprocessing
 import threading
+from multiprocessing import Queue as MPQueue
 
 
 def get_parall_id():
