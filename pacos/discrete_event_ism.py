@@ -41,10 +41,7 @@ class IsmEngine:
         self.de_engine.add_actor(actor)
 
     def add_msg(self, msg: de.Message):
-        if self._synchronized:
-            self._synch_msg_pool.append(msg)
-        else:
-            self.de_engine.add_msg(msg)
+        self._synch_msg_pool.append(msg)
 
     def add_impulse(self, impulse: Impulse):
         self._impulses.append(impulse)
@@ -58,11 +55,16 @@ class IsmEngine:
         for impulse in impulses:
             impulse.call(self)
 
-    def _check_msg_ready(self, msg) -> bool:
+    def _check_msg_ready(self, msg, respect_pin_waiting) -> bool:
         is_ready = msg.wait_frames <= 0 and msg.target_pin.is_waiting
         if msg.wait_frames > 0:
             msg.wait_frames = msg.wait_frames - 1
         return is_ready
+
+    def _transfer_msgs(self, msgs) -> None:
+        for msg in msgs:
+            self.de_engine.add_msg(msg)
+            self._synch_msg_pool.remove(msg)
 
     def _run_frame(self) -> None:
         if self._synchronized:
@@ -71,16 +73,18 @@ class IsmEngine:
             while not is_idle:
                 is_idle = True
                 new_msgs = [x for x in self._synch_msg_pool
-                           if self._check_msg_ready(x)]
+                           if self._check_msg_ready(x,
+                                                    respect_pin_waiting=True)]
                 if len(new_msgs):
                     is_idle = False
-                    for msg in new_msgs[:1]:
-                        self.de_engine.add_msg(msg)
-                        self._synch_msg_pool.remove(msg)
+                    self._transfer_msgs(new_msgs[:1])
                     de_steps = (de_steps
                                 + self.de_engine.run(-1, False, engine=self))
             return de_steps # TODO: or has-delayed msgs!
         else:
+            new_msgs = [x for x in self._synch_msg_pool
+                       if self._check_msg_ready(x, respect_pin_waiting=False)]
+            self._transfer_msgs(new_msgs)
             return self.de_engine.run(-1, False, engine=self)
 
     def get_stamp(self) -> de.Stamp:

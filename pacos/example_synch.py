@@ -42,9 +42,8 @@ def run_synch_synch():
 
 
 def run_synch_unsynch_slow():
-    engine = IsmEngine(synchronized=True)
+    engine = IsmEngine(synchronized=False)
     actor2 = BestEffortActor(name='A2')
-    # TODO delay messages don't work with synchronized=False
     actor1 = BestEffortActor(
                              name='A1', out_pin=actor2.in_data_pin,
                              msg_xfm_func = lambda msg: msg.delay(2))
@@ -84,5 +83,7 @@ def run_synch():
     run_synch_unsynch()
     print('=== synch ===')
     run_synch_synch()
+    print('=== unsynch-slow ===')
+    run_synch_unsynch_slow()
     print('=== synch-slow ===')
     run_synch_synch_slow()
