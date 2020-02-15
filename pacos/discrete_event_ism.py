@@ -19,10 +19,15 @@ class Impulse:
         pass
 
 class IsmEngine:
-    def __init__(self):
-        self.de_engine = de.Engine()
+    def __init__(self, id: str ='ie'):
+        self._id = id
+        self.de_engine = de.Engine('de')
         self._impulses = []
         self.frame = -1
+
+    @property
+    def id(self) -> str:
+        return self._id
 
     def add_actor(self, actor: de.Actor):
         self.de_engine.add_actor(actor)
@@ -39,11 +44,12 @@ class IsmEngine:
             impulse.call(self)
 
     def _run_frame(self) -> None:
-        return self.de_engine.run(-1, False)
+        return self.de_engine.run(-1, False, stamper=self)
 
-    def get_stamp(self) -> str:
-        return '{}.{}'.format(self.frame,
-                              self.de_engine.get_stamp())
+    def get_stamp(self) -> de.Stamp:
+        return de.Stamp().add(self._id, self.frame).update(
+                                                    self.de_engine.get_stamp())
+
 
     def run(self, max_frames=20, print_frames=False) -> None:
         self.de_engine._init_run()
