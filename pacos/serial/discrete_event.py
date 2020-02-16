@@ -41,7 +41,12 @@ class Message:
         self.stamps.append(new_stamp)
 
     def __repr__(self) -> str:
-        return '{} -> {}:{} @ [{}]'.format(
+        if isinstance(self.target_pin, str):
+            return '{} -> {} @ [{}]'.format(
+                            self.payload, self.target_pin, 
+                            ', '.join([str(x) for x in self.stamps]))
+        else:
+            return '{} -> {}:{} @ [{}]'.format(
                             self.payload, self.target_pin.actor.name, 
                             self.target_pin.name,
                             ', '.join([str(x) for x in self.stamps]))
@@ -77,8 +82,7 @@ class Actor:
         return []
 
     def find_pin(self, pin_name: str) -> Pin:
-        print('QQQ', pin_name, [x.name for x in self.pins])
-        return [x for x in self.pins if x.name==str][0]
+        return [x for x in self.pins if x.name==pin_name][0]
 
     def init_call(self, engine: "Engine") -> None:
         return []

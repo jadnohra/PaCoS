@@ -26,20 +26,36 @@ class IsmEngineParall(IsmEngine):
         if msg.target_pin.actor._parall_engine == self:
             self._synch_msg_pool.append(msg)
         else:
-            print('PARALLEL PANIC!', msg)
+            #print('PARALLEL PANIC!', msg)
             engine = msg.target_pin.actor._parall_engine
             engine._parall_queue.put(msg.forward(
                                         self.get_pin_address(msg.target_pin)))
+
+    def compare_stamps(self, ref: de.Stamp, other: de.Stamp) -> int:
+        frame_other = other.get(self._id)
+        frame_ref = other.get(self._id)
+        if frame_other is None or frame_ref is None:
+            # TODO, we cannot compare yet stamps from parallel engines
+            return '???'
+        return frame_other - frame_ref
+        
+        
 
     def _get_transfer_msgs(self) -> List[de.Message]:
         remote_msgs = []
         queue = self._parall_queue
         while not queue.empty():
             msg = queue.get()
+            #print('YYYYYY', msg)
             remote_msgs.append(msg.forward(
                                 self.resolve_pin_address(msg.target_pin)))
-            print('YYYY', msg)
         return remote_msgs + super()._get_transfer_msgs()
+
+    def _transfer_msgs(self, msgs) -> None:
+        for msg in msgs:
+            self.de_engine.push_msg(msg)
+            if msg in self._synch_msg_pool:
+                self._synch_msg_pool.remove(msg)
 
     def run(self, return_on_idle=False, max_frames=20,
             print_frames=False) -> None:
