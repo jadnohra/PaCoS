@@ -77,6 +77,7 @@ class Actor:
         return []
 
     def find_pin(self, pin_name: str) -> Pin:
+        print('QQQ', pin_name, [x.name for x in self.pins])
         return [x for x in self.pins if x.name==str][0]
 
     def init_call(self, engine: "Engine") -> None:
