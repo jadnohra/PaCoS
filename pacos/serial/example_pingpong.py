@@ -27,7 +27,7 @@ class PingActor(Actor):
             if self._pings_left > 0:
                 self._pings_left = self._pings_left - 1
                 self.in_pin._is_waiting = True
-                engine.add_msg(Message(self.out_pin, self.in_pin))
+                engine.push_msg(Message(self.out_pin, self.in_pin))
 
     def init_call(self, engine: "Engine") -> None:
         self._ping(engine, True)
@@ -52,7 +52,7 @@ class PongActor(Actor):
     def _pong(self, engine: "Engine") -> None:
         for msg in self.in_pin.msgs:
             print('ping')
-            engine.add_msg(Message(msg.payload, 'pong'))
+            engine.push_msg(Message(msg.payload, 'pong'))
         self.in_pin.msgs.clear()
 
     def init_call(self, engine: "Engine") -> None:

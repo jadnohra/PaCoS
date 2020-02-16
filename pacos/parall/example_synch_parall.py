@@ -24,8 +24,8 @@ def run_synch_unsynch():
     engine1.add_impulse(data)
     engine1.add_impulse(timer1)
     engine2.add_impulse(timer2)
-    run_parall([(engine1, {'max_frames':5}),
-                 (engine2, {'max_frames':5})
+    run_parall([tuple([engine1, {'max_frames':5}]),
+                tuple([engine2, {'max_frames':5}])
                 ])
 
 
