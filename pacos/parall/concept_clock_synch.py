@@ -1,5 +1,6 @@
 from typing import List
 import threading
+import time
 from .parall_util import _run_parall
 
 
@@ -49,9 +50,10 @@ class ClockSynchronizer:
             self._release_join_entry(i, clock)
     
     def _gather_dependencies(self, clock: int, clock_t1: float) -> List[int]:
+        def is_dependent(clock: int, other_info: "ClockInfo") -> bool:
+            return False  # TODO, continue here
         return [other for (other, other_info) in self._clocks.items()
-                if (other != clock and 
-                    other_info.t1 is not None and other_info.t1 < clock_t1)]
+                if (other != clock and is_dependent(clock, other_info))]
 
     def _acquire_dependencies(self, clock: int, dep_indicies: List[int]
                               ) -> None:
@@ -78,12 +80,14 @@ class ClockSynchronizer:
 def test_pair_offset():
     def run_clock(synch: ClockSynchronizer, clock: int):
         for _ in range(5):
+            time.sleep(0.1 + clock*0.2)
+            print('tick', clock)
             synch.synch_tick(clock, 1)
 
     synch = ClockSynchronizer()
+    c0 = synch.add_clock(0.5)
     c1 = synch.add_clock(0)
-    c2 = synch.add_clock(0.5)
-    _run_parall([[run_clock, {'synch': synch, 'clock':c1}], 
-                 [run_clock, {'synch': synch, 'clock':c2}]
+    _run_parall([[run_clock, {'synch': synch, 'clock':c0}], 
+                 [run_clock, {'synch': synch, 'clock':c1}]
                  ])
 
