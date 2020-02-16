@@ -76,6 +76,9 @@ class Actor:
     def pins(self) -> List[Pin]:
         return []
 
+    def find_pin(self, pin_name: str) -> Pin:
+        return [x for x in self.pins if x.name==str][0]
+
     def init_call(self, engine: "Engine") -> None:
         return []
 
@@ -97,7 +100,7 @@ class Engine:
     def add_actor(self, actor: Actor):
         self._actors.append(actor)
 
-    def add_msg(self, msg: Message):
+    def push_msg(self, msg: Message):
         self._msgs.append(msg)
 
     def _pop_msg(self, engine: Any) -> None:
@@ -107,6 +110,7 @@ class Engine:
         msg.target_pin.actor.call(engine)
         if '--log' in sys.argv:
             print('MSG:', msg)
+
 
     def _init_run(self) -> None:
         for actor in self._actors:

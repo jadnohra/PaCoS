@@ -1,4 +1,5 @@
 import copy
+from typing import List
 from . import discrete_event as de
 
 
@@ -61,9 +62,17 @@ class IsmEngine:
             msg.wait_frames = msg.wait_frames - 1
         return is_ready
 
+    def _get_transfer_msgs(self) -> List[de.Message]:
+        if self._synchronized:
+            return [x for x in self._synch_msg_pool
+                   if self._check_msg_ready(x, respect_pin_waiting=True)]
+        else:
+            return [x for x in self._synch_msg_pool
+                    if self._check_msg_ready(x, respect_pin_waiting=False)]
+
     def _transfer_msgs(self, msgs) -> None:
         for msg in msgs:
-            self.de_engine.add_msg(msg)
+            self.de_engine.push_msg(msg)
             self._synch_msg_pool.remove(msg)
 
     def _run_frame(self) -> None:
@@ -72,9 +81,7 @@ class IsmEngine:
             is_idle = False
             while not is_idle:
                 is_idle = True
-                new_msgs = [x for x in self._synch_msg_pool
-                           if self._check_msg_ready(x,
-                                                    respect_pin_waiting=True)]
+                new_msgs = self._get_transfer_msgs()
                 if len(new_msgs):
                     is_idle = False
                     self._transfer_msgs(new_msgs[:1])
@@ -82,8 +89,7 @@ class IsmEngine:
                                 + self.de_engine.run(-1, False, engine=self))
             return de_steps # TODO: or has-delayed msgs!
         else:
-            new_msgs = [x for x in self._synch_msg_pool
-                       if self._check_msg_ready(x, respect_pin_waiting=False)]
+            new_msgs = self._get_transfer_msgs()
             self._transfer_msgs(new_msgs)
             return self.de_engine.run(-1, False, engine=self)
 
