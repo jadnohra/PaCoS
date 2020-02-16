@@ -26,7 +26,6 @@ class IsmEngineParall(IsmEngine):
         if msg.target_pin.actor._parall_engine == self:
             self._synch_msg_pool.append(msg)
         else:
-            #print('PARALLEL PANIC!', msg)
             engine = msg.target_pin.actor._parall_engine
             engine._parall_queue.put(msg.forward(
                                         self.get_pin_address(msg.target_pin)))
@@ -46,7 +45,6 @@ class IsmEngineParall(IsmEngine):
         queue = self._parall_queue
         while not queue.empty():
             msg = queue.get()
-            #print('YYYYYY', msg)
             remote_msgs.append(msg.forward(
                                 self.resolve_pin_address(msg.target_pin)))
         return remote_msgs + super()._get_transfer_msgs()
