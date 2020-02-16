@@ -80,10 +80,10 @@ class ClockSynchronizer:
 def test_pair_offset():
     def run_clock(synch: ClockSynchronizer, clock: int):
         for _ in range(5):
-            time.sleep(0.1 + clock*0.2)
+            time.sleep(0.01 + clock*0.02)
             print('tick', clock)
             synch.synch_tick(clock, 1)
-
+    print('===concept-clock-synch===')
     synch = ClockSynchronizer()
     c0 = synch.add_clock(0.5)
     c1 = synch.add_clock(0)
