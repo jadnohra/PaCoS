@@ -104,3 +104,7 @@ pong
 * 4 A2 OK-LAT(-1)
 * 4 A1 OK-LAT(0)
 ```
+
+# Credits
+
+* pacos.jpg is from https://pxhere.com/en/photo/87232
