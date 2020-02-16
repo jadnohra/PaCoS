@@ -10,14 +10,13 @@ class PeriodicImpulse(Impulse):
         self.period = period
         self.ticks_left = first_ticks_left
 
-    def call(self, engine: "IsmEngine"):
+    def call(self, engine: "IsmEngine") -> None:
         if self.ticks_left <= 0:
             self.ticks_left = self.period
             for msg in self.msgs_func(self):
                 engine.add_msg(msg)
         else:
             self.ticks_left = self.ticks_left - 1
-
 
 
 class FuzzyPeriodicImpulse(Impulse):
@@ -29,7 +28,7 @@ class FuzzyPeriodicImpulse(Impulse):
         self.rand = rand
         self.ticks_left = first_ticks_left
 
-    def call(self, engine: "IsmEngine"):
+    def call(self, engine: "IsmEngine") -> None:
         if self.ticks_left <= 0:
             variance = self.rand.randint(-self.variance, self.variance)
             self.ticks_left = self.period + variance
