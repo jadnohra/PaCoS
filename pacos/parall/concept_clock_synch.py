@@ -1,5 +1,5 @@
 from typing import List
-import threading
+import multiprocessing
 import time
 from .parall_util import _run_parall
 
@@ -40,7 +40,7 @@ class ClockSynchronizer:
     def _acquire_join_entry(self, i: int, j: int) -> None:
         self._ensure_join_entry(i, j)
         if self._join_matrix[i][j] is None:
-            self._join_matrix[i][j] = threading.Condition()
+            self._join_matrix[i][j] = multiprocessing.Condition()
             self._join_matrix[i][j].acquire()
         else:
             raise RuntimeError('PANIC!')
