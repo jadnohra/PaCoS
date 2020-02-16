@@ -1,6 +1,7 @@
 from pacos.serial.discrete_event_ism import IsmEngine, de
 from .parall_util import get_parall_id, MPQueue
 
+import pickle
 
 class IsmEngineParall(IsmEngine):
     def __init__(self, id: str ='ie', impulse_rand=None, synchronized=False):
@@ -17,7 +18,14 @@ class IsmEngineParall(IsmEngine):
             self._synch_msg_pool.append(msg)
         else:
             print('PARALLEL PANIC!', msg)
-            msg.target_pin.actor._parall_engine._parall_queue.put(msg)
+            print('XXXXY', msg.__dict__)
+            try:
+                pickle.dumps(msg)
+            except AttributeError as e:
+                # TODO: we cannot use objects as target_data_pins for IPC, this 
+                # makes the messages non-serializable
+                print('ZZZZ', msg.__dict__)
+            #msg.target_pin.actor._parall_engine._parall_queue.put(msg)
 
     def run(self, return_on_idle=False, max_frames=20,
             print_frames=False) -> None:
