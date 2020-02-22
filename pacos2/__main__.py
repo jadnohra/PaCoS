@@ -67,17 +67,16 @@ class Actor:
 
 
 class Impulse:
-    
     def generate(self) -> List[Message]:
         return []
 
+
 class MsgRouter:
-    
     def route(self, msg: Message) -> None:
         pass
 
-class Engine:
 
+class Engine:
     def step(self, router: MsgRouter) -> TimeInterval:
         return 0
 
@@ -86,7 +85,6 @@ class Engine:
 
 
 class DiscreteEventEngine(Engine):
-
     def step(self, router: MsgRouter) -> TimeInterval:
         return 0
 
@@ -95,7 +93,6 @@ class DiscreteEventEngine(Engine):
 
 
 class ImpulseEngine(Engine):
-
     def step(self, router: MsgRouter) -> TimeInterval:
         return 0
 
