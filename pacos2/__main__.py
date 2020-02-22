@@ -1,5 +1,6 @@
 from enum import Enum, auto
-from typing import List, Tuple
+from typing import List, Tuple, Callable, Dict
+import multiprocessing
 
 
 Address = str
@@ -70,49 +71,75 @@ class Impulse:
     def generate(self) -> List[Message]:
         return []
 
+class MsgRouter:
+    
+    def route(self, msg: Message) -> None:
+        pass
 
 class Engine:
 
-    def step(self) -> TimeInterval:
+    def step(self, router: MsgRouter) -> TimeInterval:
         return 0
 
-    def put(self, msg: Message):
+    def put(self, msg: Message) -> None:
         pass
 
 
 class DiscreteEventEngine(Engine):
 
-    def step(self) -> TimeInterval:
+    def step(self, router: MsgRouter) -> TimeInterval:
         return 0
 
-    def put(self, msg: Message):
+    def put(self, msg: Message) -> None:
         pass
 
 
 class ImpulseEngine(Engine):
 
-    def step(self) -> TimeInterval:
+    def step(self, router: MsgRouter) -> TimeInterval:
         return 0
 
-    def put(self, msg: Message):
+    def put(self, msg: Message) -> None:
         pass
 
 
-class ParallelContext:
+class ParallelContext(MsgRouter):
     def __init__(self):
         self._engines = []
         self._wave_t1 = None
         self._wave_times = []
+        self._parall_msg_queue = multiprocessing.Queue()
 
-    def transfer(self, msg: Message):
-        pass
+    def route(self, msg: Message) -> None:
+         self._parall_msg_queue.put(msg)
 
     @property
-    def engine_count(self):
+    def engine_count(self) -> int:
         return len(self._engines)
 
-    def _step_parallel(self, engines: List[Engine]) -> List[TimeInterval]:
-        return []
+    @staticmethod
+    def _run_parall(funcs_kwargs: List[Tuple[Callable, Dict]]) -> None:
+        processes = []
+        for func, kwargs in funcs_kwargs:
+            p = multiprocessing.Process(target=func, kwargs=kwargs)
+            processes.append(p)
+            p.start()
+        for p in processes:
+            p.join()
+
+    def _step_parall(self, engines: List[Engine]) -> List[TimeInterval]:
+        def step_engine(engines, out_intervals, index):
+            out_intervals[index] = engines[index].step(self)
+        
+        intervals = [None]*len(engines)
+        self._run_parall([(lambda i: step_engine(engines, intervals, i), {})
+                          for i in range(len(engines))])
+        return intervals
+
+    def _process_parall_msg_queue(self) -> None:
+        queue = self._parall_msg_queue
+        while not queue.empty():
+            queue.get()
         
     def step(self) -> Tuple[TimeInterval, TimeInterval]:
         cand_engines = [self._engines[i] for i in range(self.engine_count)
@@ -124,7 +151,7 @@ class ParallelContext:
                 return self.step()
             else:
                 return 0
-        intervals = self._step_parallel(cand_engines)
+        intervals = self._step_parall(cand_engines)
         return [min(intervals), max(intervals)]
 
 
