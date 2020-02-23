@@ -1,11 +1,11 @@
 import os
 import multiprocessing
 from typing import List, Tuple, Callable, Dict
-from .interfaces import IMsgRouter, IMessage, IEngine, TimeInterval, IContext
+from .interfaces import IMsgRouter, IMessage, IEngine, TimeInterval, ITopology
 from .parall_msg_router import ParallMessageRouter
 
 
-class ParallWavefrontContext(IContext):
+class ParallWavefrontTopology(ITopology):
     def __init__(self):
         self._engines = []
         self._name_engine_dict = {}

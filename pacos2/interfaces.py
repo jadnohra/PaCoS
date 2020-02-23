@@ -98,7 +98,7 @@ class IEngine(ABC, Addressable):
         pass
 
 
-class IContext(ABC):
+class ITopology(ABC):
     @abstractmethod
     def step(self) -> TimeInterval:
         pass

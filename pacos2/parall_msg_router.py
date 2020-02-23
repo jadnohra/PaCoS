@@ -1,12 +1,12 @@
 import os
 import multiprocessing
 from typing import Dict, Any
-from .interfaces import IContext, IMessage, IEngine
+from .interfaces import ITopology, IMessage, IEngine
 
 
 class ParallMessageRouter:
-    def __init__(self, context: IContext):
-        self._context = context
+    def __init__(self, topology: ITopology):
+        self._topology = topology
         self._msg_queue = multiprocessing.Queue()
         self._routing_dict = {}
     
@@ -23,4 +23,4 @@ class ParallMessageRouter:
     def flush(self):
         while not self._msg_queue.empty():
             msg = self._msg_queue.get()
-            self._context.engine[msg.target.engine].put_msg(msg)
+            self._topology.engine(msg.target.engine).put_msg(msg)
