@@ -1,4 +1,5 @@
-from .interfaces import IPin, PinState
+import logging
+from .interfaces import IPin, PinState, IMessage, IMsgRouter
 
 
 class PinBase(IPin):
@@ -14,5 +15,11 @@ class PinBase(IPin):
     def state(self) -> PinState:
         return self._state
 
+    def can_process(self) -> bool:
+        if self.state == PinState.CLOSED:
+            logging.error("{}: Received message while closed".format(self))
+            return False
+        return True
+    
     def __repr__(self) -> str:
-        return 'Pin {} ({})'.format(self.name, self.state)
+        return '{} ({})'.format(self.address, self.state)

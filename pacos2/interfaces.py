@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from enum import Enum, auto
 from collections import namedtuple
 from typing import List, Tuple, Callable, Dict
+from .addressable import Addressable
 
 
 Address = List[str]
@@ -37,13 +38,19 @@ class IMessage(ABC):
         return None
 
 
+class IMsgRouter(ABC):
+    @abstractmethod
+    def route(self, msg: IMessage) -> None:
+        pass
+
+
 class PinState(Enum):
     CLOSED = auto()
     OPEN = auto()
     WAITING = auto()
 
 
-class IPin(ABC):
+class IPin(ABC, Addressable):
     @abstractproperty
     def name(self) -> str:
         pass
@@ -53,11 +60,11 @@ class IPin(ABC):
         pass
 
     @abstractmethod
-    def process(self, msg: IMessage) -> Time:
+    def process(self, msg: IMessage, msg_router: IMsgRouter) -> Time:
         pass
 
 
-class IActor(ABC):
+class IActor(ABC, Addressable):
     def __init__(self):
         pass
 
@@ -70,19 +77,13 @@ class IActor(ABC):
         pass
 
 
-class IImpulse(ABC):
+class IImpulse(ABC, Addressable):
     @abstractmethod
     def generate(self) -> List[IMessage]:
         pass
 
 
-class IMsgRouter(ABC):
-    @abstractmethod
-    def route(self, msg: IMessage) -> None:
-        pass
-
-
-class IEngine(ABC):
+class IEngine(ABC, Addressable):
     @abstractmethod
     def step(self, router: IMsgRouter) -> TimeInterval:
         pass
