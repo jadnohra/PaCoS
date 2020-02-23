@@ -14,4 +14,5 @@ class PinBase(IPin):
     def state(self) -> PinState:
         return self._state
 
-    
+    def __repr__(self) -> str:
+        return 'Pin {} ({})'.format(self.name, self.state)

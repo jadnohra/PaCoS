@@ -9,6 +9,5 @@ class NullPin(PinBase):
 
     def process(self, msg: IMessage) -> Time:
         if self.state == PinState.CLOSED:
-            logging.error("Pin [{}]: Received message while closed".format(
-                           self.name))
+            logging.error("{}: Received message while closed".format(self))
         return self._processing_time
