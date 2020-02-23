@@ -1,5 +1,5 @@
 # PaCoS 
-Pa(rallel) Co(mputation) S(imulator) 
+Pa(rallel) Co(mputing) S(imulator) 
 
 
 ---
