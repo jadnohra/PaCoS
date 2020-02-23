@@ -1,4 +1,4 @@
-from typing import Any
+from typing import List, Any
 from .interfaces import Stamp, Address, IMessage, Time, TimeInterval
 
 
