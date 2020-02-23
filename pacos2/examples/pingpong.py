@@ -19,6 +19,7 @@ class PingActor(Actor):
         if self._pings_left > 0:
             self._pings_left = self._pings_left - 1
             router.route(self.create_msg())
+        print(self._pings_left)
 
     def create_msg(self):
         pong_actor_address = Address(None, 'pong', None)
