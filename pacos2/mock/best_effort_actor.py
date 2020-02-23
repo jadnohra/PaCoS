@@ -1,5 +1,5 @@
 import logging
-from ..interfaces import Address, PinState, IMessage, IMsgRouter
+from ..interfaces import Address, Addressable, PinState, IMessage, IMsgRouter
 from ..actor import Actor
 from .pins import NullPin, BufferPin
 

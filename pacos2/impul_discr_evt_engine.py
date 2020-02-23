@@ -6,11 +6,11 @@ from .interfaces import IMsgRouter, TimeInterval
 
 
 class ImpulsiveDiscreteEventEngine(DiscreteEventEngine):
-    def __init__(self, name: str, impulse_rand: Random = None):
-        super().__init__(name)
+    def __init__(self, discr_engine: DiscreteEventEngine, 
+                impulse_rand: Random = None):
+        self._discr_engine = discr_engine
         self._impulses = []
         self._impulse_rand = impulse_rand
-        self._tick = -1
     
     def add_impulse(self, impulse: IDiscreteImpulse) -> None:
         self._impulses.append(impulse)
@@ -25,9 +25,8 @@ class ImpulsiveDiscreteEventEngine(DiscreteEventEngine):
             impulse.generate(self)
 
     def step(self, router: IMsgRouter) -> TimeInterval:
-        if len(self._msgs) == 0:
-            self._generate_impulses()
-            self._tick = self._tick + 1
-            if len(self._msgs) == 0:
-                return 0
-        return self._pop_msg(router)
+        discr_step = self._discr_engine.step(router)
+        if discr_step != 0:
+            return discr_step
+        self._generate_impulses()
+        return self._discr_engine.step(router)
