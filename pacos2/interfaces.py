@@ -54,9 +54,8 @@ class PinState(Enum):
 
 
 class IPin(ABC, Addressable):
-    @abstractproperty
-    def name(self) -> str:
-        pass
+    def __init__(self, name: str):
+        Addressable.__init__(self, name)
 
     @abstractproperty
     def state(self) -> PinState:
@@ -68,12 +67,8 @@ class IPin(ABC, Addressable):
 
 
 class IActor(ABC, Addressable):
-    def __init__(self):
-        pass
-
-    @abstractproperty
-    def name(self) -> str:
-        pass
+    def __init__(self, name: str):
+        Addressable.__init__(self, name)
 
     @abstractproperty
     def pins(self) -> List[IPin]:
@@ -87,27 +82,14 @@ class IImpulse(ABC, Addressable):
 
 
 class IEngine(ABC, Addressable):
-    @abstractmethod
-    def step(self, router: IMsgRouter) -> TimeInterval:
-        pass
+    def __init__(self, name: str):
+        Addressable.__init__(self, name)
 
     @abstractmethod
-    def put(self, msg: IMessage) -> None:
-        pass
-
-
-class DiscreteEventEngine(IEngine):
     def step(self, router: IMsgRouter) -> TimeInterval:
         pass
 
-    def put(self, msg: IMessage) -> None:
-        pass
-
-
-class ImpulseEngine(IEngine):
-    def step(self, router: IMsgRouter) -> TimeInterval:
-        pass
-
+    @abstractmethod
     def put(self, msg: IMessage) -> None:
         pass
 

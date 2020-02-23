@@ -4,12 +4,8 @@ from .interfaces import IPin, PinState, IMessage, IMsgRouter
 
 class PinBase(IPin):
     def __init__(self, name: str, state: PinState):
-        self._name = name
+        Addressable.__init__(self, name)
         self._state = state
-
-    @property
-    def name(self) -> str:
-        return self._name
 
     @property
     def state(self) -> PinState:
