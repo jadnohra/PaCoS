@@ -26,7 +26,7 @@ class BestEffortActor(Actor):
         else:
             return self.state
 
-    def _do_output(self, router: IMsgRouter) -> None:
+    def _send_out_msg(self, router: IMsgRouter) -> None:
         data_msg = self.data_pin.messages[0]
         self.health_latency = router.clock.time - data_msg.stamps[0].time
         self.data_pin.messages.clear()
@@ -47,5 +47,5 @@ class BestEffortActor(Actor):
             self.health_rate = 'STARVING'
             self.health_latency = 'N/A'
         if len(self.data_pin.messages) > 0:
-            self._do_output(router)
+            self._send_out_msg(router)
         logging.info(self.health)
