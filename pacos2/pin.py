@@ -1,5 +1,6 @@
 import logging
 from .interfaces import IPin, PinState, IMessage, IMsgRouter
+from .addressable import Addressable
 
 
 class PinBase(IPin):
