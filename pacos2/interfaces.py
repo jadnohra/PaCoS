@@ -82,7 +82,7 @@ class IActor(ABC, Addressable):
 
 class IImpulse(ABC, Addressable):
     @abstractmethod
-    def generate(self) -> List[IMessage]:
+    def generate(self, router: IMsgRouter) -> None:
         pass
 
 
