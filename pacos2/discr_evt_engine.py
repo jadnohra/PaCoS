@@ -30,16 +30,16 @@ class DiscreteEventEngine(IEngine):
             return self._actors[0]
         return self._name_actor_dict.get(actor_name, None)
 
-    def resolve_pin(self, address: Address, fallback: Address) -> IPin:
-        actor_name = address.actor if address.actor else fallback.actor
-        return self.get_actor(actor_name).get_pin(address.pin)
+    def get_msg_pin(self, msg: IMessage) -> IPin:
+        actor_name = msg.target.actor if msg.target.actor else msg.source.actor
+        return self.get_actor(actor_name).get_pin(msg.target.pin)
 
     def _pop_queue_msg(self, router: IMsgRouter) -> TimeInterval:
         if len(self._msg_queue) == 0:
             return 0
         msg = self._msg_queue.pop()
         msg.stamp(Stamp(msg.target, router.clock.time))
-        return self.resolve_pin(msg.target, msg.source).process(msg, router)
+        return self.get_msg_pin(msg).process(msg, router)
 
     def _enqueue_ready_msgs(self, clock: IClock) -> None:
         ready_indices = [i for i,msg in enumerate(self._msg_pool)

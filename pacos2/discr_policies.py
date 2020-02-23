@@ -18,5 +18,5 @@ class MsgAlwaysReadyPolicy(IMsgReadyPolicy):
 class MsgReadyPolicy(IMsgReadyPolicy):
      def check(self, msg: IMessage, engine: "DiscreteEventEngine", 
                clock: IClock) -> bool:
-        return (engine.resolve_pin(msg.target).state != PinState.CLOSED
+        return (engine.get_msg_pin(msg).state != PinState.CLOSED
                 and msg.emission_time + msg.wire_time >= clock.time)
