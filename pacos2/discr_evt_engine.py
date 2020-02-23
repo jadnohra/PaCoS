@@ -24,9 +24,12 @@ class DiscreteEventEngine(IEngine):
     def put_msg(self, msg: IMessage) -> None:
         self._msg_pool.append(msg)
 
-    def resolve_pin(self, address: Address) -> IPin:
-        actor = self._name_actor_dict[address[-2]]
-        pin = actor.pin(address[-1])
+    def resolve_pin(self, address: Address, fallback: Address) -> IPin:
+        actor_name = address.actor if address.actor else fallback.actor
+        actor = self._name_actor_dict[actor_name]
+        pin = (actor.pin(address.pin) if address.pin 
+               else actor.pins[0] if len(actor.pins) == 1 
+               else None)
         return pin
 
     def _pop_queue_msg(self, router: IMsgRouter) -> TimeInterval:
@@ -34,7 +37,7 @@ class DiscreteEventEngine(IEngine):
             return 0
         msg = self._msg_queue.pop()
         msg.stamp(Stamp(msg.target, router.clock.time))
-        return self.resolve_pin(msg.target).process(msg, router)
+        return self.resolve_pin(msg.target, msg.source).process(msg, router)
 
     def _enqueue_ready_msgs(self, clock: IClock) -> None:
         ready_indices = [i for i,msg in enumerate(self._msg_pool)

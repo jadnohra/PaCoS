@@ -5,7 +5,7 @@ from typing import List, Tuple, Callable, Dict
 from .addressable import Addressable
 
 
-Address = List[str]
+Address = namedtuple('Address', 'engine actor pin')
 Time = int
 TimeInterval = int
 
@@ -101,4 +101,8 @@ class IEngine(ABC, Addressable):
 class IContext(ABC):
     @abstractmethod
     def step(self) -> TimeInterval:
+        pass
+
+    @abstractmethod
+    def engine(self, engine_name: str) -> IEngine:
         pass
