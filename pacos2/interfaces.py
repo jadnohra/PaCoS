@@ -20,8 +20,7 @@ class IMessage(ABC):
     def forward(self, new_target: Address) -> None:
         pass
 
-    @abstractmethod
-    @property
+    @abstractproperty
     def source(self) -> Address:
         return None
 
@@ -41,6 +40,10 @@ class IMessage(ABC):
 class IMsgRouter(ABC):
     @abstractmethod
     def route(self, msg: IMessage) -> None:
+        pass
+
+    @abstractproperty
+    def time(self) -> Time:
         pass
 
 

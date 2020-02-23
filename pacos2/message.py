@@ -33,6 +33,10 @@ class Message(IMessage):
         self._stamps.append(new_stamp)
 
     @property
+    def stamps(self, new_stamp: Stamp) -> List[Stamp]:
+        return self._stamps
+
+    @property
     def emission_time(self) -> Time:
         return self._emission_time
 

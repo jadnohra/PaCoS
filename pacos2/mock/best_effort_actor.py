@@ -28,9 +28,7 @@ class BestEffortActor(Actor):
 
     def _do_output(self, msg_router: IMsgRouter) -> None:
         data_msg = self.data_pin.messages[0]
-        self.health_latency = engine.compare_stamps(
-                                    engine.get_stamp(),
-                                    data_msg.stamps[0])
+        self.health_latency = msg_router.time - data_msg.stamps[0].time
         self.data_pin.messages.clear()
         if self._out_address:
             data_msg.forward(self._out_address)
