@@ -13,7 +13,8 @@ class PeriodicImpulse(IDiscreteImpulse):
 
     def generate(self, engine: DiscreteEventEngine, clock: IClock
                  ) -> TimeInterval:
-        trigger_count = (clock.time - self.next_time) / self.interval
+        trigger_count = (((clock.time + self.interval) - self.next_time) 
+                         / self.interval)
         spent_interval = 0
         while trigger_count:
             for msg in self.gen_msgs_func(self):
