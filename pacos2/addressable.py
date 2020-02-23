@@ -1,4 +1,4 @@
-import os
+from typing import List
 
 
 class Addressable:
@@ -8,17 +8,17 @@ class Addressable:
 
     def init_address(self, parent: Addressable):
         if parent is not None:
-            os.path.join(parent.address, self.name)
+            self._address = parent.address + [self.name]
         else:
-            self._address = self.name 
+            self._address = [self.name]
 
     @property
     def name(self) -> str:
         return self._name
 
     @property
-    def address(self):
+    def address(self) -> List[str]:
         return self._address
 
     def __repr__(self) -> str:
-        return '{}'.format(self.address)
+        return '{}'.format('/'.join(self.address))

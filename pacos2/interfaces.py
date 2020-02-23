@@ -62,7 +62,7 @@ class IPin(ABC, Addressable):
         pass
 
     @abstractmethod
-    def process(self, msg: IMessage, msg_router: IMsgRouter) -> Time:
+    def process(self, msg: IMessage, router: IMsgRouter) -> Time:
         pass
 
 
@@ -74,10 +74,8 @@ class IActor(ABC, Addressable):
     def pins(self) -> List[IPin]:
         pass
 
-
-class IImpulse(ABC, Addressable):
     @abstractmethod
-    def generate(self, router: IMsgRouter) -> None:
+    def pin(self, pin_name: str) -> IPin:
         pass
 
 
@@ -90,7 +88,7 @@ class IEngine(ABC, Addressable):
         pass
 
     @abstractmethod
-    def put(self, msg: IMessage) -> None:
+    def put_msg(self, msg: IMessage) -> None:
         pass
 
 
