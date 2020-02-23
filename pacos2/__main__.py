@@ -1,9 +1,10 @@
+import os
 from enum import Enum, auto
 from typing import List, Tuple, Callable, Dict
 import multiprocessing
 
 
-Address = str
+Address = List[str]
 Time = int
 TimeInterval = int
 
@@ -15,6 +16,9 @@ class Message:
     @property
     def target(self) -> Address:
         return None
+
+    def retarget(self, new_target: Address) -> None:
+        pass
 
     @property
     def source(self) -> Address:
@@ -103,6 +107,7 @@ class ImpulseEngine(Engine):
 class ParallelContext(MsgRouter):
     def __init__(self):
         self._engines = []
+        self._name_engine_dict = {}
         self._wave_t1 = None
         self._wave_times = []
         self._parall_msg_queue = multiprocessing.Queue()
@@ -131,12 +136,18 @@ class ParallelContext(MsgRouter):
         intervals = [None]*len(engines)
         self._run_parall([(lambda i: step_engine(engines, intervals, i), {})
                           for i in range(len(engines))])
+        self._process_parall_msg_queue()
         return intervals
 
     def _process_parall_msg_queue(self) -> None:
         queue = self._parall_msg_queue
         while not queue.empty():
-            queue.get()
+            msg = queue.get()
+            path_split = msg.target.split(os.path.sep)
+            engine_name = path_split[0]
+            path_remaining = os.path.sep.join(path_split[1:])
+            msg.retarget(path_remaining)
+            self._name_engine_dict[engine_name].put(msg)
         
     def step(self) -> Tuple[TimeInterval, TimeInterval]:
         cand_engines = [self._engines[i] for i in range(self.engine_count)
