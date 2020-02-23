@@ -6,8 +6,8 @@ from ..pin import PinBase
 
 class NullPin(PinBase):
     def __init__(
-          self, name: str, state: PinState, 
-          notif_func: Callable[None, [IPin, IMessage, IMsgRouter]] = None,
+          self, name: str, state: PinState = PinState.OPEN, 
+          notif_func: Callable[[IPin, IMessage, IMsgRouter], None] = None,
           processing_time: int = 1):
         super().__init__(name, state)
         self._notif_func = notif_func
@@ -23,8 +23,9 @@ class NullPin(PinBase):
 
 class IdentPin(PinBase):
     def __init__(
-          self, name: str, state: PinState, out_address: Address, 
-          notif_func: Callable[None, [IPin, IMessage, IMsgRouter]] = None,
+          self, name: str, out_address: Address, 
+          state: PinState = PinState.OPEN,
+          notif_func: Callable[[IPin, IMessage, IMsgRouter], None] = None,
           processing_time: int = 1):
         super().__init__(name, state)
         self._out_address = out_address
@@ -43,8 +44,8 @@ class IdentPin(PinBase):
 
 class BufferPin(PinBase):
     def __init__(
-          self, name: str, state: PinState, 
-          notif_func: Callable[None, [IPin, IMessage, IMsgRouter]] = None,
+          self, name: str, state: PinState = PinState.OPEN,
+          notif_func: Callable[[IPin, IMessage, IMsgRouter], None] = None,
           processing_time: int = 1):
         super().__init__(name, state)
         self._processing_time = processing_time

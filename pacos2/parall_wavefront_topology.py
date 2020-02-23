@@ -2,7 +2,7 @@ import os
 import multiprocessing
 from typing import List, Tuple, Callable, Dict
 from .interfaces import IMsgRouter, IMessage, IEngine, TimeInterval, ITopology
-from .parall_msg_router import ParallMessageRouter
+from .parall_msg_router import ParallMsgRouter
 
 
 class ParallWavefrontTopology(ITopology):
@@ -11,7 +11,7 @@ class ParallWavefrontTopology(ITopology):
         self._name_engine_dict = {}
         self._wave_t1 = None
         self._wave_times = []
-        self._router = ParallMessageRouter(self)
+        self._router = ParallMsgRouter(self)
 
     def add_engine(self, engine: IEngine) -> None:
         engine.init_address(None)
@@ -42,7 +42,9 @@ class ParallWavefrontTopology(ITopology):
         self._router.flush()
         return intervals
 
-    def engine(self, engine_name: str) -> IEngine:
+    def get_engine(self, engine_name: str) -> IEngine:
+        if engine_name is None and len(self._engines) >= 0:
+            return self._engines[0]
         return self._name_engine_dict.get(engine_name, None)
         
     def step(self) -> TimeInterval:

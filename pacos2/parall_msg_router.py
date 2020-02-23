@@ -4,7 +4,7 @@ from typing import Dict, Any
 from .interfaces import ITopology, IMessage, IEngine
 
 
-class ParallMessageRouter:
+class ParallMsgRouter:
     def __init__(self, topology: ITopology):
         self._topology = topology
         self._msg_queue = multiprocessing.Queue()
@@ -23,4 +23,4 @@ class ParallMessageRouter:
     def flush(self):
         while not self._msg_queue.empty():
             msg = self._msg_queue.get()
-            self._topology.engine(msg.target.engine).put_msg(msg)
+            self._topology.get_engine(msg.target.engine).put_msg(msg)

@@ -3,8 +3,8 @@ from .interfaces import Stamp, Address, IMessage, Time, TimeInterval
 
 
 class Message(IMessage):
-    def __init__(self, source: Address, target: Address, payload: Any,
-                 emission_time: Time, wire_time: TimeInterval = 0):
+    def __init__(self, source: Address, target: Address, payload: Any = None,
+                 emission_time: Time = 0, wire_time: TimeInterval = 0):
         super().__init__()
         self._source = source
         self._target = target

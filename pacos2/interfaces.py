@@ -2,10 +2,10 @@ from abc import ABC, abstractmethod, abstractproperty
 from enum import Enum, auto
 from collections import namedtuple
 from typing import List, Tuple, Callable, Dict
+from .address import Address
 from .addressable import Addressable
 
 
-Address = namedtuple('Address', 'engine actor pin')
 Time = int
 TimeInterval = int
 
@@ -81,7 +81,7 @@ class IActor(ABC, Addressable):
         pass
 
     @abstractmethod
-    def pin(self, pin_name: str) -> IPin:
+    def get_pin(self, pin_name: str) -> IPin:
         pass
 
 
@@ -104,5 +104,9 @@ class ITopology(ABC):
         pass
 
     @abstractmethod
-    def engine(self, engine_name: str) -> IEngine:
+    def get_engine(self, engine_name: str) -> IEngine:
+        pass
+
+    @property
+    def engines(self) -> List[IEngine]:
         pass
