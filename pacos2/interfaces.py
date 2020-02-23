@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod, abstractproperty
 from enum import Enum, auto
 from collections import namedtuple
 from typing import List, Tuple, Callable, Dict
@@ -9,26 +10,29 @@ TimeInterval = int
 
 Stamp = namedtuple('Stamp', 'address time')
 
-class IMessage:
-    @property
+class IMessage(ABC):
+    @abstractproperty
     def target(self) -> Address:
         return None
 
+    @abstractmethod
     def forward(self, new_target: Address) -> None:
         pass
 
+    @abstractmethod
     @property
     def source(self) -> Address:
         return None
 
+    @abstractmethod
     def stamp(self, stamp: Stamp) -> None:
         pass
 
-    @property
+    @abstractproperty
     def emission_time(self) -> Time:
         return None
 
-    @property
+    @abstractproperty
     def wire_time(self) -> TimeInterval:
         return None
 
@@ -39,54 +43,58 @@ class PinState(Enum):
     WAITING = auto()
 
 
-class IPin:
-    @property
+class IPin(ABC):
+    @abstractproperty
     def name(self) -> str:
-        return None
+        pass
 
-    @property
+    @abstractproperty
     def state(self) -> PinState:
-        return None
+        pass
 
-    @property
+    @abstractmethod
     def process(self, msg: IMessage) -> Time:
-        return 0
+        pass
 
 
-class IActor:
+class IActor(ABC):
     def __init__(self):
         pass
 
-    @property
+    @abstractproperty
     def name(self) -> str:
-        return None
+        pass
 
-    @property
+    @abstractproperty
     def pins(self) -> List[IPin]:
-        return []
+        pass
 
 
-class IImpulse:
+class IImpulse(ABC):
+    @abstractmethod
     def generate(self) -> List[IMessage]:
-        return []
+        pass
 
 
-class IMsgRouter:
+class IMsgRouter(ABC):
+    @abstractmethod
     def route(self, msg: IMessage) -> None:
         pass
 
 
-class IEngine:
+class IEngine(ABC):
+    @abstractmethod
     def step(self, router: IMsgRouter) -> TimeInterval:
-        return 0
+        pass
 
+    @abstractmethod
     def put(self, msg: IMessage) -> None:
         pass
 
 
 class DiscreteEventEngine(IEngine):
     def step(self, router: IMsgRouter) -> TimeInterval:
-        return 0
+        pass
 
     def put(self, msg: IMessage) -> None:
         pass
@@ -94,12 +102,13 @@ class DiscreteEventEngine(IEngine):
 
 class ImpulseEngine(IEngine):
     def step(self, router: IMsgRouter) -> TimeInterval:
-        return 0
+        pass
 
     def put(self, msg: IMessage) -> None:
         pass
 
 
-class IContext:
+class IContext(ABC):
+    @abstractmethod
     def step(self) -> TimeInterval:
-        return None
+        pass
