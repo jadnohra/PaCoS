@@ -37,13 +37,19 @@ class IMessage(ABC):
         return None
 
 
+class IClock(ABC):
+    @abstractmethod
+    def time(self) -> Time:
+        pass
+
+
 class IMsgRouter(ABC):
     @abstractmethod
     def route(self, msg: IMessage) -> None:
         pass
 
     @abstractproperty
-    def time(self) -> Time:
+    def clock(self) -> IClock:
         pass
 
 
