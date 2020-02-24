@@ -3,16 +3,13 @@ from .interfaces import IClock, IMessage, TimeInterval
 
 
 class SynchTakeStep:
-    def __init__(self):
-        pass
+     def __init__(self, clock: IClock):
+        self.clock = clock
 
 class SynchStepResult:
-    def __init__(self, step_interval: TimeInterval):
+    def __init__(self, step_interval: TimeInterval, msgs: List[IMessage]):
         self.step_interval = step_interval
-
-class SynchClock:
-    def __init__(self, clock: IClock):
-        self.clock = clock
+        self.msgs = msgs
 
 class SynchMsgs:
     def __init__(self, msgs: List[IMessage]):

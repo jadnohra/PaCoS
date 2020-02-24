@@ -9,12 +9,21 @@ from .parall_process import ParallProcess
 
 
 class ParallWavefrontSynchronizer:
-    def __init__(self, process_classes = List[ParallProcess]):
-        self._processes = [x() for x in process_classes]
+    def __init__(self, process_classes = List["ParallProcessClass"]):
+        self._processes = [proc_cls() for proc_cls in process_classes]
         self._wave_times = []
         self._wave_t1 = None
         
-    def _step_parall(self, engines: List[IEngine]) -> List[TimeInterval]:
+    def _step_parall(self, proc_indices: List[int]) -> List[TimeInterval]:
+        intervals = []
+        remote_msgs = []
+        for i in proc_indices:
+            self._processes[i].send_take_step(self._clock)
+        for i in proc_indices:
+            step_result = self._processes[i].recv()
+            intervals.append(step_result.interval)
+            
+        
         intervals = multiprocessing.Array('i', len(engines), lock=False)
         pids = multiprocessing.Array('i', len(engines), lock=False)
         pid_fill_task = multiprocessing.JoinableQueue()
@@ -44,16 +53,16 @@ class ParallWavefrontSynchronizer:
         return list(intervals)
 
     def step(self) -> TimeInterval:
-        cand_procs = [self._processes[i] for i in range(len(self._processes))
-                        if (self._wave_t1 is None or 
-                            self._wave_times[i] < self._wave_t1)]
-        if len(cand_engines) == 0:
+        steppable_proc_indices = [i for i in range(len(self._processes))
+                                  if (self._wave_t1 is None 
+                                      or self._wave_times[i] < self._wave_t1)]
+        if len(steppable_proc_indices) == 0:
             wave_t1 = max(self._wave_times)
             if wave_t1 > self._wave_t1:
                 return self.step()
             else:
                 return 0
-        intervals = self._step_parall(cand_engines)
+        intervals = self._step_parall(steppable_proc_indices)
         nonzero_intervals = [x for x in intervals if x > 0]
         return min(nonzero_intervals) if len(nonzero_intervals) else 0
 

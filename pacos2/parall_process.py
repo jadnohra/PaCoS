@@ -1,8 +1,7 @@
 from abc import ABC, abstractclassmethod
 import multiprocessing
 from typing import List, Any
-from .parall_synch_msgs import (
-    SynchTakeStep, SynchStepResult, SynchClock, SynchMsgs)
+from .parall_synch_msgs import SynchTakeStep, SynchStepResult, SynchMsgs
 from .msg_router import MsgRouter
 from .interfaces import IEngine, IMessage, TimeInterval, IClock
 from .manual_clock import ManualClock
@@ -21,16 +20,13 @@ class ParallProcess(ABC):
     def join(self) -> None:
         self._process.join()
     
-    def send_take_step(self) -> None:
-        self.parent_conn.send(SynchTakeStep())
-        
-    def send_clock(self, clock: IClock) -> None:
-        self.parent_conn.send(SynchClock(clock)) 
+    def send_take_step(self, clock: IClock) -> None:
+        self.parent_conn.send(SynchTakeStep(clock)) 
         
     def send_msgs(self, msgs: List[IMessage]) -> None:
         self.parent_conn.send(SynchMsgs(msgs))
         
-    def recv(self) -> Any:
+    def recv_step_result(self) -> Any:
         return self.child_conn.recv()
     
     @abstractclassmethod
@@ -45,13 +41,12 @@ class ParallProcess(ABC):
         while True:
             synch_msg = parent_conn.recv()
             if isinstance(synch_msg, SynchTakeStep):
+                router.clock = synch_msg.clock
                 interval = topology.step()
-                child_conn.send(SynchStepResult(interval))
-                child_conn.send(SynchMsgs(router.pop_remote_msgs()))
+                child_conn.send(SynchStepResult(interval, 
+                                                router.pop_remote_msgs()))
             elif isinstance(synch_msg, SynchMsgs):
                 for msg in synch_msg.msgs:
                     router.route(msg)
-            elif isinstance(synch_msg, SynchClock):
-                router.clock = synch_msg.clock
             else:
                 return
