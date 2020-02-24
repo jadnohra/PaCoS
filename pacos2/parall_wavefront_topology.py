@@ -1,17 +1,19 @@
 import os
+import copy
 import multiprocessing
 from typing import List, Tuple, Callable, Dict
-from .interfaces import IMsgRouter, IMessage, IEngine, TimeInterval, ITopology
+from .interfaces import (
+                IMsgRouter, IMessage, IEngine, TimeInterval, IClock, ITopology)
 from .parall_msg_router import ParallMsgRouter
 
 
 class ParallWavefrontTopology(ITopology):
-    def __init__(self):
+    def __init__(self, clock: IClock):
         self._engines = []
         self._name_engine_dict = {}
         self._wave_t1 = None
         self._wave_times = []
-        self._router = ParallMsgRouter(self)
+        self._router = ParallMsgRouter(self, clock)
 
     def add_engine(self, engine: IEngine) -> None:
         engine.init_address(None)
@@ -22,8 +24,25 @@ class ParallWavefrontTopology(ITopology):
     def engine_count(self) -> int:
         return len(self._engines)
 
-    @staticmethod
-    def _run_parall(funcs_kwargs: List[Tuple[Callable, Dict]]) -> None:
+    def _step_parall(self, engines: List[IEngine]) -> List[TimeInterval]:
+        intervals = multiprocessing.Array('i', len(engines), lock=False)
+        pids = multiprocessing.Array('i', len(engines), lock=False)
+        pid_fill_task = multiprocessing.JoinableQueue()
+        for i in range(len(engines)):
+            pid_fill_task.put(None)
+        
+        def step_engine(router: IMsgRouter, index: int):
+            pid_fill_task.get()
+            pids[index] = os.getpid()
+            pid_fill_task.task_done()
+            pid_fill_task.join()
+            local_router = copy.copy(router)
+            local_router.set_routing_dict({pids[i]: engines[i]
+                                           for i in range(len(processes))})
+            intervals[index] = engines[index].step(local_router)
+        
+        funcs_kwargs = [(lambda i: step_engine(self._router, i), {'i':i}) 
+                        for i in range(len(engines))]
         processes = []
         for func, kwargs in funcs_kwargs:
             p = multiprocessing.Process(target=func, kwargs=kwargs)
@@ -31,16 +50,8 @@ class ParallWavefrontTopology(ITopology):
             p.start()
         for p in processes:
             p.join()
-
-    def _step_parall(self, engines: List[IEngine]) -> List[TimeInterval]:
-        def step_engine(engines, out_intervals, index):
-            out_intervals[index] = engines[index].step(self)
-        
-        intervals = [None]*len(engines)
-        self._run_parall([(lambda i: step_engine(engines, intervals, i), {})
-                          for i in range(len(engines))])
         self._router.flush()
-        return intervals
+        return list(intervals)
 
     def get_engine(self, engine_name: str) -> IEngine:
         if engine_name is None and len(self._engines) >= 0:
