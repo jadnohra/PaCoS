@@ -31,4 +31,5 @@ class ParallMsgRouter:
     def flush(self) -> None:
         while not self._msg_queue.empty():
             msg = self._msg_queue.get()
+            print('FLUSH', msg)
             self._topology.get_engine(msg.target.engine).put_msg(msg)
