@@ -14,6 +14,10 @@ class MsgRouter:
     def clock(self) -> IClock:
         return self._clock
     
+    @clock.setter
+    def clock(self, clock: IClock) -> None:
+        self._clock = clock
+    
     def route(self, msg: IMessage) -> None:
         local_engine = self._local_topology.get_engine(msg.target.engine)
         if local_engine is not None:
