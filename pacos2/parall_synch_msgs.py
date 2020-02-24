@@ -7,9 +7,11 @@ class SynchTakeStep:
         self.clock = clock
 
 class SynchStepResult:
-    def __init__(self, step_interval: TimeInterval, msgs: List[IMessage]):
+    def __init__(self, step_interval: TimeInterval, 
+                 msgs: List[IMessage], engine_names: List[str]):
         self.step_interval = step_interval
         self.msgs = msgs
+        self.engine_names = engine_names
 
 class SynchMsgs:
     def __init__(self, msgs: List[IMessage]):

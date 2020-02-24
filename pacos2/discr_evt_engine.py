@@ -7,7 +7,7 @@ from .discr_policies import IMsgReadyPolicy
 
 
 class DiscreteEventEngine(IEngine):
-    def __init__(self, name: str, msg_ready_policy: IMsgReadyPolicy,
+    def __init__(self, msg_ready_policy: IMsgReadyPolicy, name: str = None,
                  msg_queue_rand: Random = None):
         Addressable.__init__(self, name)
         self._actors = []

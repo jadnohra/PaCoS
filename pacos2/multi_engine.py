@@ -1,10 +1,10 @@
 from .interfaces import (
-        IMsgRouter, IMessage, IEngine, TimeInterval, ITopology, IClock)
+        IMsgRouter, IMessage, IEngine, TimeInterval, IMultiEngine, IClock)
 from .msg_router import MsgRouter
 
 
-class SerialTopology(ITopology):
-    def __init__(self, clock: IClock):
+class MultiEngine(IMultiEngine):
+    def __init__(self, clock: IClock = None):
         self._engines = []
         self._name_engine_dict = {}
         self._router = MsgRouter(self, clock)
