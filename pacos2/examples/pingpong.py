@@ -12,8 +12,8 @@ from pacos2.parall_wavefront_topology import ParallWavefrontTopology
 
 
 class PingActor(Actor):
-    def __init__(self, ping_count, pong_engine=None):
-        self._pong_engine = pong_engine
+    def __init__(self, ping_count, pong_engine_name=None):
+        self._pong_engine_name = pong_engine_name
         self._pings_left = ping_count
         pin = NullPin('trigger', notif_func = self._on_trigger)
         super().__init__('ping', [pin])
@@ -25,12 +25,13 @@ class PingActor(Actor):
             router.route(self.create_msg())
 
     def create_msg(self):
-        pong_actor_address = Address(engine=self._pong_engine, actor='pong')
+        pong_actor_address = Address(engine=self._pong_engine_name, 
+                                     actor='pong')
         return Message(self.address, pong_actor_address)
 
 class PongActor(Actor):
-    def __init__(self, ping_engine=None):
-        ping_actor_address = Address(engine=ping_engine, actor='ping')
+    def __init__(self, ping_engine_name=None):
+        ping_actor_address = Address(engine=ping_engine_name, actor='ping')
         pin = IdentPin('trigger', ping_actor_address)
         super().__init__('pong', [pin])
 
@@ -64,9 +65,9 @@ def run_parall():
                                    msg_ready_policy=MsgAlwaysReadyPolicy())
     topology.add_engine(engine_a)
     topology.add_engine(engine_b)
-    ping_actor = PingActor(3)
+    ping_actor = PingActor(3, pong_engine_name=engine_b.name)
     engine_a.add_actor(ping_actor)
-    engine_b.add_actor(PongActor())
+    engine_b.add_actor(PongActor(ping_engine_name=engine_a.name))
     engine_b.put_msg(ping_actor.create_msg())
     while True:
         interval = topology.step()

@@ -22,8 +22,10 @@ class ParallMsgRouter:
         print('XXX', self._pid_engine_dict, os.getpid())
         local_engine = self._pid_engine_dict[os.getpid()]
         if msg.target.engine is None or msg.target.engine == local_engine.name:
+            print('LOCAL')
             local_engine.put_msg(msg)
         else:
+            print('REMOTE')
             self._msg_queue.put(msg)
 
     def flush(self) -> None:
