@@ -46,6 +46,8 @@ class DiscreteEventEngine(IEngine):
                          if self._msg_ready_policy.check(msg, self, clock)]
         if self._msg_queue_rand is not None:
             self._msg_queue_rand.shuffle(ready_indices)
+        # max one message, since the pin states may change after processing it
+        ready_indices = ready_indices[:1] 
         for i in ready_indices:
             self._msg_queue.append(self._msg_pool[i])
         for i in sorted(ready_indices, reverse=True):
@@ -53,4 +55,8 @@ class DiscreteEventEngine(IEngine):
 
     def step(self, router: IMsgRouter) -> TimeInterval:
         self._enqueue_ready_msgs(router.clock)
-        return self._pop_queue_msg(router)
+        interval = 0
+        while len(self._msg_queue) > 0:
+            interval = interval + self._pop_queue_msg(router)
+            self._enqueue_ready_msgs(router.clock)
+        return interval

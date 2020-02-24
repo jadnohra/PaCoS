@@ -29,7 +29,8 @@ class ImpulsiveDiscreteEventEngine(IEngine):
             self._impulse_rand.shuffle(impulses)
         else:
             impulses = reversed(self._impulses)
-        intervals = [impulse.generate(self, clock) for impulse in impulses]
+        intervals = [impulse.generate(self._discr_engine, clock) 
+                     for impulse in impulses]
         return intervals
 
     def step(self, router: IMsgRouter) -> TimeInterval:

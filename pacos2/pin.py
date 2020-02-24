@@ -12,9 +12,15 @@ class PinBase(IPin):
     def state(self) -> PinState:
         return self._state
 
-    def can_process(self) -> bool:
+    @state.setter
+    def state(self, state: PinState) -> None:
+        self._state = state
+
+    def can_process(self, msg: IMessage) -> bool:
+        logging.debug(msg)
         if self.state == PinState.CLOSED:
-            logging.error("{}: Received message while closed".format(self))
+            logging.error("{}: Received message while closed : {}".format(
+                          self, msg))
             return False
         return True
     

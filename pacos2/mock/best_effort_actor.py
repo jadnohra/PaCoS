@@ -38,6 +38,8 @@ class BestEffortActor(Actor):
         if len(self.data_pin.messages) > 1:
             self.health_rate = 'DROPPING({})'.format(
                                                 len(self.data_pin.messages)-1)
+        self.data_pin.state = PinState.CLOSED
+        self.trigger_pin.state = PinState.WAITING
 
     def _on_trigger(self,  _, msg: IMessage, router: IMsgRouter) -> None:
         self.state = 'ACTIVE'
@@ -47,4 +49,6 @@ class BestEffortActor(Actor):
             self.health_latency = 'N/A'
         if len(self.data_pin.messages) > 0:
             self._send_out_msg(router)
+        self.data_pin.state = PinState.WAITING
+        self.trigger_pin.state = PinState.CLOSED
         logging.info(self.health)

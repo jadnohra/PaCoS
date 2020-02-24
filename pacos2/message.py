@@ -4,12 +4,12 @@ from .interfaces import Stamp, Address, IMessage, Time, TimeInterval
 
 class Message(IMessage):
     def __init__(self, source: Address, target: Address, payload: Any = None,
-                 emission_time: Time = 0, wire_time: TimeInterval = 0):
+                 time: Time = 0, wire_time: TimeInterval = 0):
         super().__init__()
         self._source = source
         self._target = target
         self._payload = payload
-        self._emission_time = emission_time
+        self._emission_time = time
         self._wire_time = wire_time
         self._stamps = []
 
@@ -33,7 +33,7 @@ class Message(IMessage):
         self._stamps.append(new_stamp)
 
     @property
-    def stamps(self, new_stamp: Stamp) -> List[Stamp]:
+    def stamps(self) -> List[Stamp]:
         return self._stamps
 
     @property

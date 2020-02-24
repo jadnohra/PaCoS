@@ -8,7 +8,7 @@ from pacos2.message import Message, Address
 from pacos2.impul_discr_evt_engine import (
     ImpulsiveDiscreteEventEngine, DiscreteEventEngine)
 from pacos2.manual_clock import ManualClock
-from pacos2.discr_policies import MsgReadyPolicy
+from pacos2.discr_policies import MsgAlwaysReadyPolicy
 from pacos2.msg_routers import SingleEngineRouter
 
 
@@ -21,9 +21,9 @@ def _gen_data_msgs(_: IDiscreteImpulse, clock: IClock) -> Message:
 
 
 def run():
-    print('=== besteffort-perfect ===')
+    print('=== besteffort-ignore-state ===')
     engine = ImpulsiveDiscreteEventEngine(
-                DiscreteEventEngine(msg_ready_policy=MsgReadyPolicy()))
+                DiscreteEventEngine(msg_ready_policy=MsgAlwaysReadyPolicy()))
     actor = BestEffortActor('a')
     engine.discr_engine.add_actor(actor)
     engine.add_impulse(PeriodicImpulse(_gen_data_msgs))

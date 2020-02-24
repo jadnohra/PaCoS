@@ -17,7 +17,7 @@ class PeriodicImpulse(IDiscreteImpulse):
                          / self.interval)
         spent_interval = 0
         while trigger_count:
-            for msg in self.gen_msgs_func(self):
+            for msg in self.gen_msgs_func(self, clock):
                 engine.put_msg(msg)
             trigger_count = trigger_count - 1
             spent_interval = self.interval
