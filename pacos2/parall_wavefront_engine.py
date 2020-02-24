@@ -1,5 +1,6 @@
 import os
 import copy
+import logging
 import multiprocessing
 from typing import List, Tuple, Callable, Dict
 from .interfaces import (
@@ -37,6 +38,7 @@ class ParallWavefrontEngine:
         intervals = []
         engine_msg_lists = {}
         synch_clock = ManualClock(self._wave_time)
+        logging.info('Wavefront: send take_step')
         for i in proc_indices:
             self._processes[i].send_take_step(synch_clock)
         for i in proc_indices:
