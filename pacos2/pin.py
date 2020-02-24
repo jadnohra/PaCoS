@@ -19,7 +19,7 @@ class PinBase(IPin):
     def can_process(self, msg: IMessage) -> bool:
         logging.debug(msg)
         if self.state == PinState.CLOSED:
-            logging.error("{}: Received message while closed : {}".format(
+            logging.debug("{}: Received message while closed : {}".format(
                           self, msg))
             return False
         return True

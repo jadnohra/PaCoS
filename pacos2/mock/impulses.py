@@ -16,7 +16,7 @@ class PeriodicImpulse(IDiscreteImpulse):
         trigger_count = (((clock.time + self.interval) - self.next_time) 
                          / self.interval)
         spent_interval = 0
-        while trigger_count:
+        while trigger_count > 0:
             for msg in self.gen_msgs_func(self, clock):
                 engine.put_msg(msg)
             trigger_count = trigger_count - 1
