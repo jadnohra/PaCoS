@@ -7,7 +7,7 @@ from pacos2.discr_evt_engine import DiscreteEventEngine
 from pacos2.mock.pins import NullPin, IdentPin
 from pacos2.manual_clock import ManualClock
 from pacos2.discr_policies import MsgAlwaysReadyPolicy
-from pacos2.msg_routers import SingleEngineRouter, MultiEngineRouter
+from pacos2.msg_routers import SingleEngineRouter
 
 
 class PingActor(Actor):

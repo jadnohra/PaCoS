@@ -5,8 +5,7 @@ from .pins import NullPin, BufferPin
 
 
 class BestEffortActor(Actor):
-    def __init__(self, name: str, out_address: Address):
-        Addressable.__init__(self, name)
+    def __init__(self, name: str = 'a', out_address: Address = None):
         self.trigger_pin = NullPin('trigger', PinState.CLOSED, 
                                     self._on_trigger)
         self.data_pin = BufferPin('data', PinState.WAITING,
