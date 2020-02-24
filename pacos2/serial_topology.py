@@ -1,13 +1,13 @@
 from .interfaces import (
         IMsgRouter, IMessage, IEngine, TimeInterval, ITopology, IClock)
-from .serial_msg_router import SerialMsgRouter
+from .msg_router import MsgRouter
 
 
 class SerialTopology(ITopology):
     def __init__(self, clock: IClock):
         self._engines = []
         self._name_engine_dict = {}
-        self._router = SerialMsgRouter(self, clock)
+        self._router = MsgRouter(self, clock)
 
     def add_engine(self, engine: IEngine) -> None:
         engine.init_address(None)

@@ -47,7 +47,9 @@ class DiscreteEventEngine(IEngine):
         if self._msg_queue_rand is not None:
             self._msg_queue_rand.shuffle(ready_indices)
         for i in ready_indices:
-            self._msg_queue.append(self._msg_pool.pop(i))
+            self._msg_queue.append(self._msg_pool[i])
+        for i in sorted(ready_indices, reverse=True):
+            self._msg_pool.pop(i)
 
     def step(self, router: IMsgRouter) -> TimeInterval:
         self._enqueue_ready_msgs(router.clock)
