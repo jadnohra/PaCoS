@@ -16,3 +16,7 @@ class SynchStepResult:
 class SynchMsgs:
     def __init__(self, msgs: List[IMessage]):
         self.msgs = msgs
+
+class SynchExit:
+    def __init__(self):
+        pass

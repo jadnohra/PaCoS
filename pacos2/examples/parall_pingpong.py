@@ -5,10 +5,10 @@ from pacos2.actor import Actor
 from pacos2.message import Message
 from pacos2.discr_evt_engine import DiscreteEventEngine
 from pacos2.mock.pins import NullPin, IdentPin
-from pacos2.manual_clock import ManualClock
 from pacos2.discr_policies import MsgAlwaysReadyPolicy
-from pacos2.msg_routers import SingleEngineRouter, MultiEngineRouter
+from pacos2.msg_routers import MultiEngineRouter
 from pacos2.multi_engine import MultiEngine, IMultiEngine
+from pacos2.parall_process import ParallProcess
 from pacos2.parall_wavefront_engine import ParallWavefrontEngine
 
 
@@ -35,34 +35,39 @@ class PongActor(Actor):
         super().__init__('pong', [pin])
 
 
- def create_ping() -> IMultiEngine:
-    engine_a = DiscreteEventEngine(name='a', 
-                                msg_ready_policy=MsgAlwaysReadyPolicy())
-    ping_actor = PingActor(3, pong_engine_name='b')
-    engine_a.add_actor(ping_actor)
-    multieng = MultiEngine()
-    multieng.add_engine(engine_a)
-    return multieng
+class PingProcess(ParallProcess):
+    @classmethod
+    def create_multi_engine(cls) -> IMultiEngine:
+        engine_a = DiscreteEventEngine(name='a', 
+                                    msg_ready_policy=MsgAlwaysReadyPolicy())
+        ping_actor = PingActor(3, pong_engine_name='b')
+        engine_a.add_actor(ping_actor)
+        multieng = MultiEngine()
+        multieng.add_engine(engine_a)
+        return multieng
 
 
-def create_pong() -> IMultiEngine:
-    engine_b = DiscreteEventEngine(name='b', 
-                                msg_ready_policy=MsgAlwaysReadyPolicy())
-    pong_actor = PongActor(ping_engine_name='a')
-    engine_b.add_actor(pong_actor)
-    engine_b.put_msg(PingActor(1).create_msg())
-    multieng = MultiEngine()
-    multieng.add_engine(engine_b)
-    return multieng
+class PongProcess(ParallProcess):
+    @classmethod
+    def create_multi_engine(cls) -> IMultiEngine:
+        engine_b = DiscreteEventEngine(name='b', 
+                                    msg_ready_policy=MsgAlwaysReadyPolicy())
+        pong_actor = PongActor(ping_engine_name='a')
+        engine_b.add_actor(pong_actor)
+        engine_b.put_msg(PingActor(1).create_msg())
+        multieng = MultiEngine()
+        multieng.add_engine(engine_b)
+        return multieng
 
 
 def run():
     print('=== parall-pingpong ===')
-    parall_engine = ParallWavefrontEngine([create_ping, create_pong])
+    parall_engine = ParallWavefrontEngine([PingProcess, PongProcess])
     while True:
         interval = parall_engine.step()
         if interval == 0:
             break
+    parall_engine.join()
 
 
 if __name__ == "__main__":

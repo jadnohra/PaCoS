@@ -14,9 +14,9 @@ class ParallWavefrontEngine:
         self._processes = [proc_cls() for proc_cls in process_classes]
         self._process_engine_names = [None] * len(self._processes)
         self._engine_name_index_dict = {}
-        self._wave_times = []
+        self._wave_times = [-1]*len(self._processes)
         self._wave_time = 1
-    
+
     def _update_engine_names(self, proc_index: int, eng_names: List[str]
                              ) -> None:
         if eng_names is None:
@@ -40,7 +40,8 @@ class ParallWavefrontEngine:
         for i in proc_indices:
             self._processes[i].send_take_step(synch_clock)
         for i in proc_indices:
-            step_result = self._processes[i].recv()
+            step_result = self._processes[i].recv_step_result()
+            print('XXX', step_result)
             intervals.append(step_result.interval)
             put_msg_list(step_result.msgs, engine_msg_lists)
             self._update_engine_names(i, step_result.engine_names)
@@ -59,8 +60,8 @@ class ParallWavefrontEngine:
         return self._wave_times[proc_index] < self._wave_time
 
     def _step(self, enable_speculate=True) -> TimeInterval:
-        steppable_indices = filter(self._is_steppable, 
-                                range(len(self._processes)))
+        steppable_indices = [i for i in range(len(self._processes)) 
+                             if self._is_steppable(i)]
         if len(steppable_indices) == 0:
             if enable_speculate:
                 wave_time = max(self._wave_times)
@@ -71,9 +72,14 @@ class ParallWavefrontEngine:
                 return self._step(enable_speculate=False)
             else:
                 return 0
-        intervals = self._step_parall(list(steppable_indices))
+        intervals = self._step_parall(steppable_indices)
         nonzero_intervals = [x for x in intervals if x > 0]
         return min(nonzero_intervals) if len(nonzero_intervals) else 0
 
     def step(self) -> TimeInterval:
       return self._step()
+
+    def join(self) -> None:
+        for proc in self._processes:
+            proc.send_exit()
+            proc.join()
