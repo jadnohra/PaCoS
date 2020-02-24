@@ -78,7 +78,7 @@ class ParallWavefrontEngine:
         return min(nonzero_intervals) if len(nonzero_intervals) else 0
 
     def step(self) -> TimeInterval:
-      return self._step()
+        return self._step()
 
     def join(self) -> None:
         for proc in self._processes:
