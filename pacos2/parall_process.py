@@ -43,15 +43,15 @@ class ParallProcess(ABC):
         while True:
             synch_msg = conn.recv()
             if isinstance(synch_msg, SynchTakeStep):
-                multi_engine._router.clock = synch_msg.clock
+                multi_engine.router.clock = synch_msg.clock
                 interval = multi_engine.step()
                 # TODO set eng_names to None when no change
                 engine_names = [x.name for x in multi_engine.engines] 
-                #child_conn.send(SynchStepResult(interval, 
-                #                                router.pop_bounced(),
-                #                               engine_names))
+                conn.send(SynchStepResult(interval, 
+                                          multi_engine.router.pop_bounced(),
+                                          engine_names))
             elif isinstance(synch_msg, SynchMsgs):
                 for msg in synch_msg.msgs:
-                    router.route(msg)
+                    multi_engine.router.route(msg)
             else:
                 break

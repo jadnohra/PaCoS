@@ -29,7 +29,7 @@ class ParallWavefrontEngine:
         def put_msg_list(msgs: List[IMessage], 
                       engine_msg_lists: Dict[str, List[IMessage]]):
             for msg in msgs:
-                key = msg.target.name
+                key = msg.target.engine
                 if key not in engine_msg_lists:
                     engine_msg_lists[key] = []
                 engine_msg_lists[key].append(msg)
@@ -41,12 +41,11 @@ class ParallWavefrontEngine:
             self._processes[i].send_take_step(synch_clock)
         for i in proc_indices:
             step_result = self._processes[i].recv_step_result()
-            print('XXX', step_result)
             intervals.append(step_result.interval)
             put_msg_list(step_result.msgs, engine_msg_lists)
             self._update_engine_names(i, step_result.engine_names)
         
-        for eng_name, msgs in engine_msg_lists:
+        for eng_name, msgs in engine_msg_lists.items():
             proc_index = self._engine_name_index_dict.get(eng_name, None)
             self._processes[proc_index].send_msgs(msgs)
 

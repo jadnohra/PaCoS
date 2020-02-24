@@ -10,6 +10,10 @@ class MultiEngine(IMultiEngine):
         self._name_engine_dict = {}
         self._router = MultiEngineRouter(clock, self)
 
+    @property
+    def router(self) -> IMsgRouter:
+        return self._router
+
     def add_engine(self, engine: IEngine) -> None:
         engine.init_address(None)
         self._engines.append(engine)
