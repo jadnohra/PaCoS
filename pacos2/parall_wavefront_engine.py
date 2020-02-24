@@ -2,7 +2,7 @@ import os
 import copy
 import logging
 import multiprocessing
-from typing import List, Tuple, Callable, Dict
+from typing import List, Tuple, Callable, Dict, Any
 from .interfaces import (
                 IMsgRouter, IMessage, IEngine, TimeInterval, IClock)
 from .manual_clock import ManualClock
@@ -11,8 +11,9 @@ from .parall_process import ParallProcess
 
 
 class ParallWavefrontEngine:
-    def __init__(self, process_classes = List["ParallProcessClass"]):
-        self._processes = [proc_cls() for proc_cls in process_classes]
+    def __init__(self, mp_context: Any, 
+                 process_classes = List["ParallProcessClass"]):
+        self._processes = [proc_cls(mp_context) for proc_cls in process_classes]
         self._process_engine_names = [None] * len(self._processes)
         self._engine_name_index_dict = {}
         self._wave_times = [-1]*len(self._processes)
@@ -34,11 +35,10 @@ class ParallWavefrontEngine:
                 if key not in engine_msg_lists:
                     engine_msg_lists[key] = []
                 engine_msg_lists[key].append(msg)
-
         intervals = []
         engine_msg_lists = {}
         synch_clock = ManualClock(self._wave_time)
-        logging.info('Wavefront: send take_step')
+        logging.info('{}: send take_step {}'.format(os.getpid(), proc_indices))
         for i in proc_indices:
             self._processes[i].send_take_step(synch_clock)
         for i in proc_indices:

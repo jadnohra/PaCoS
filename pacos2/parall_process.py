@@ -1,6 +1,7 @@
-from abc import ABC, abstractclassmethod
+import os
 import multiprocessing
 import logging
+from abc import ABC, abstractclassmethod
 from typing import List, Any, Callable
 from .parall_synch_msgs import (
     SynchTakeStep, SynchStepResult, SynchMsgs, SynchExit)
@@ -10,11 +11,11 @@ from .manual_clock import ManualClock
 
 
 class ParallProcess(ABC):
-    def __init__(self):
-        self.conn, child_conn = multiprocessing.Pipe()
+    def __init__(self, mp_context: Any):
+        self.conn, child_conn = mp_context.Pipe()
         kwargs={'multi_engine_create_func': self.create_multi_engine,
                 'conn': child_conn}
-        self._process = multiprocessing.Process(target=self._process_func, 
+        self._process = mp_context.Process(target=self._process_func, 
                                                 kwargs=kwargs)
         self._process.start()
     
@@ -41,6 +42,7 @@ class ParallProcess(ABC):
     def _process_func(multi_engine_create_func, conn):
         multi_engine = multi_engine_create_func()
         while True:
+            logging.info('{}: waiting to step'.format(os.getpid()))
             synch_msg = conn.recv()
             if isinstance(synch_msg, SynchTakeStep):
                 multi_engine.router.clock = synch_msg.clock

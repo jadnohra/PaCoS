@@ -1,4 +1,6 @@
 import sys
+import logging
+import argparse
 from typing import List
 from pacos2.interfaces import IMsgRouter, Address, IMessage
 from pacos2.actor import Actor
@@ -8,6 +10,7 @@ from pacos2.mock.pins import NullPin, IdentPin
 from pacos2.discr_policies import MsgAlwaysReadyPolicy
 from pacos2.msg_routers import MultiEngineRouter
 from pacos2.multi_engine import MultiEngine, IMultiEngine
+from pacos2.parall_context import create_parall_context
 from pacos2.parall_process import ParallProcess
 from pacos2.parall_wavefront_engine import ParallWavefrontEngine
 
@@ -62,7 +65,8 @@ class PongProcess(ParallProcess):
 
 def run():
     print('=== parall-pingpong ===')
-    parall_engine = ParallWavefrontEngine([PingProcess, PongProcess])
+    parall_engine = ParallWavefrontEngine(create_parall_context(),
+                                          [PingProcess, PongProcess])
     while True:
         interval = parall_engine.step()
         if interval == 0:
@@ -71,4 +75,9 @@ def run():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--log", default='WARNING')
+    args = parser.parse_args(sys.argv[1:])
+    logging.basicConfig(format='%(levelname)s:%(message)s',
+                        level=logging.getLevelName(args.log.upper()))
     run()
