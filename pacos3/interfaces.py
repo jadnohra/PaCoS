@@ -1,40 +1,12 @@
 from abc import ABC, abstractmethod, abstractproperty
 from enum import Enum, auto
-from collections import namedtuple
-from typing import List, Tuple, Callable, Dict
+from typing import List, Tuple, Any
 from .address import Address
 from .addressable import Addressable
-
+from .proc_call import ProcCall
 
 Time = int
 TimeInterval = int
-
-Stamp = namedtuple('Stamp', 'address time')
-
-class IMessage(ABC):
-    @abstractproperty
-    def target(self) -> Address:
-        return None
-
-    @abstractmethod
-    def forward(self, new_target: Address) -> None:
-        pass
-
-    @abstractproperty
-    def source(self) -> Address:
-        return None
-
-    @abstractmethod
-    def stamp(self, stamp: Stamp) -> None:
-        pass
-
-    @abstractproperty
-    def emission_time(self) -> Time:
-        return None
-
-    @abstractproperty
-    def wire_time(self) -> TimeInterval:
-        return None
 
 
 class IClock(ABC):
@@ -43,9 +15,15 @@ class IClock(ABC):
         pass
 
 
-class IMsgRouter(ABC):
+class ICallSource(ABC):
     @abstractmethod
-    def route(self, msg: IMessage) -> None:
+    def generate(self, clock: IClock) -> List[ProcCall]:
+        pass
+
+
+class IRouter(ABC):
+    @abstractmethod
+    def route(self, call: ProcCall) -> None:
         pass
 
     @abstractproperty
@@ -53,60 +31,57 @@ class IMsgRouter(ABC):
         pass
 
 
-class PinState(Enum):
+class ProcState(Enum):
     CLOSED = auto()
     OPEN = auto()
     WAITING = auto()
 
-
-class IPin(ABC, Addressable):
-    def __init__(self, name: str):
-        Addressable.__init__(self, name)
-
+class IProcedure(Addressable):
     @abstractproperty
-    def state(self) -> PinState:
+    def state(self) -> ProcState:
         pass
 
+    # TBC, addressing, how of the resulting proc_call
+    # how does a router work? router stack? buffer up (to master)?
     @abstractmethod
-    def process(self, msg: IMessage, router: IMsgRouter) -> Time:
+    def execute(self, call: ProcCall, clock: IClock
+                ) -> Tuple[TimeInterval, List[ProcCall]]:
         pass
 
 
-class IActor(ABC, Addressable):
-    def __init__(self, name: str):
-        Addressable.__init__(self, name)
-
+class IActor(Addressable):
     @abstractproperty
-    def pins(self) -> List[IPin]:
+    def procs(self) -> List[IProcedure]:
         pass
 
     @abstractmethod
-    def get_pin(self, pin_name: str) -> IPin:
+    def get_proc(self, name: str) -> IProcedure:
         pass
 
 
-class IEngine(ABC, Addressable):
-    def __init__(self, name: str):
-        Addressable.__init__(self, name)
-
+class IProcessor(Addressable):
     @abstractmethod
-    def step(self, router: IMsgRouter) -> TimeInterval:
+    def step(self, router: IRouter) -> TimeInterval:
         pass
 
     @abstractmethod
-    def put_msg(self, msg: IMessage) -> None:
+    def put_call(self, call: ProcCall) -> None:
         pass
 
 
-class IMultiEngine(ABC):
+class IMultiProcessor(IProcessor):
     @abstractmethod
-    def step(self) -> TimeInterval:
+    def step(self, router: IRouter) -> TimeInterval:
         pass
 
     @abstractmethod
-    def get_engine(self, engine_name: str) -> IEngine:
+    def put_call(self, call: ProcCall) -> None:
+        pass
+
+    @abstractmethod
+    def get_processor(self, name: str) -> IProcessor:
         pass
 
     @property
-    def engines(self) -> List[IEngine]:
+    def processors(self) -> List[IProcessor]:
         pass

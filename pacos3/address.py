@@ -1,12 +1,14 @@
 
 
 class Address:
-    def __init__(self, engine: str = None, actor: str = None, pin: str = None):
-        self.engine = engine
+    def __init__(self, board: str = None, processor: str = None, 
+                 actor: str = None, proc: str = None):
+        self.board = board
+        self.processor = processor
         self.actor = actor
-        self.pin = pin
+        self.proc = proc
 
     def __repr__(self) -> str:
-        return '{}{}{}'.format(self.engine + '.' if self.engine else '', 
+        return '{}{}{}'.format(self.processor + '.' if self.processor else '', 
                                  self.actor + '.' if self.actor else '', 
-                                 self.pin if self.pin else '')
+                                 self.proc if self.proc else '')
