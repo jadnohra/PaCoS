@@ -11,8 +11,7 @@ from .manual_clock import ManualClock
 class Process(ABC):
     def __init__(self, mp_context: Any):
         self.conn, child_conn = mp_context.Pipe()
-        kwargs={'processor_create_func': self.create_processor,
-                'conn': child_conn}
+        kwargs={'create_func': self.create, 'conn': child_conn}
         self._process = mp_context.Process(target=self._process_func, 
                                            kwargs=kwargs)
         self._process.start()
@@ -34,12 +33,12 @@ class Process(ABC):
         pass
 
     @abstractclassmethod
-    def create_processor(cls) -> IProcessor:
+    def create(cls) -> IProcessor:
         pass
 
     @staticmethod
-    def _process_func(processor_create_func, conn):
-        processor = processor_create_func()
+    def _process_func(create_func, conn):
+        processor = create_func()
         while True:
             logging.info('{}: waiting to step'.format(os.getpid()))
             synch_msg = conn.recv()
