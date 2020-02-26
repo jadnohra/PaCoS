@@ -1,9 +1,12 @@
 from abc import ABC, abstractmethod, abstractproperty
 from enum import Enum, auto
 from typing import List, Tuple, Any
+from collections import namedtuple
 from .address import Address
 from .addressable import Addressable
 from .proc_call import ProcCall
+from .token import Token
+
 
 Time = int
 TimeInterval = int
@@ -21,14 +24,10 @@ class ICallSource(ABC):
         pass
 
 
-class IRouter(ABC):
-    @abstractmethod
-    def route(self, call: ProcCall) -> None:
-        pass
-
-    @abstractproperty
-    def clock(self) -> IClock:
-        pass
+class ProcResult:
+    def __init__(self, interval: TimeInterval, calls: List[ProcCall]):
+        self.interval = interval
+        self.calls = calls
 
 
 class ProcState(Enum):
@@ -36,16 +35,14 @@ class ProcState(Enum):
     OPEN = auto()
     WAITING = auto()
 
+
 class IProcedure(Addressable):
     @abstractproperty
     def state(self) -> ProcState:
         pass
 
-    # TBC, addressing, how of the resulting proc_call
-    # how does a router work? router stack? buffer up (to master)?
     @abstractmethod
-    def execute(self, call: ProcCall, clock: IClock
-                ) -> Tuple[TimeInterval, List[ProcCall]]:
+    def execute(self, call: ProcCall) -> ProcResult:
         pass
 
 
@@ -59,29 +56,13 @@ class IActor(Addressable):
         pass
 
 
+class StepResult:
+    def __init__(self, interval: TimeInterval, tokens: List[Token]):
+        self.interval = interval
+        self.tokens = tokens
+
+
 class IProcessor(Addressable):
     @abstractmethod
-    def step(self, router: IRouter) -> TimeInterval:
-        pass
-
-    @abstractmethod
-    def put_call(self, call: ProcCall) -> None:
-        pass
-
-
-class IMultiProcessor(IProcessor):
-    @abstractmethod
-    def step(self, router: IRouter) -> TimeInterval:
-        pass
-
-    @abstractmethod
-    def put_call(self, call: ProcCall) -> None:
-        pass
-
-    @abstractmethod
-    def get_processor(self, name: str) -> IProcessor:
-        pass
-
-    @property
-    def processors(self) -> List[IProcessor]:
+    def step(self, clock: IClock, tokens: List[Token]) -> StepResult:
         pass

@@ -1,22 +1,23 @@
 from collections import namedtuple
 from typing import List
+import copy
 from .proc_call import ProcCall
 from .interfaces import IClock, Time, TimeInterval, Address
 
 
-Stamp = namedtuple('Stamp', 'address time')
-
 class Token:
-    def __init__(self, call: ProcCall):
+    def __init__(self, call: ProcCall, time: Time):
         self._call = call
-        self._stamps = []
+        self._target = copy.copy(call.target)
+        self._stamps = [time]
     
-    def stamp(self, address: Address, time: Time) -> None:
-        self._stamps.append(Stamp(address, time))
+    @property
+    def call(self) -> ProcCall:
+        return self._call
 
     @property
-    def stamps(self) -> List[Stamp]:
-        return self._stamps
+    def target(self) -> Address:
+        return self._target
 
     @property
     def emission_time(self) -> Time:
@@ -26,7 +27,12 @@ class Token:
     def wire_time(self) -> TimeInterval:
         return self._stamps[-1].time - self._stamps[0].time
 
-    def __repr__(self) -> str:
+    def forward_processor(self, time: Time) -> "Token":
+        self._stamps.append(time)
+        self._target.processor = None
+        return self
+
+    def __str__(self) -> str:
         return '{} @ [{}]'.format(
-                            self._call,
+                            self.call,
                             ', '.join([str(x) for x in self._stamps]))

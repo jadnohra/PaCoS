@@ -3,7 +3,6 @@
 class Address:
     def __init__(self, board: str = None, processor: str = None, 
                  actor: str = None, proc: str = None):
-        self.board = board
         self.processor = processor
         self.actor = actor
         self.proc = proc

@@ -8,12 +8,9 @@ class ProcCall:
         self._target = target
         self._payload = payload
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return '{} -> {}'.format(self._payload, self._target)
 
     @property
     def target(self) -> Address:
         return self._target
-
-    def forward(self, new_target: Address) -> None:
-        self._target = new_target

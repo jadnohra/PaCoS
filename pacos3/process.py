@@ -3,13 +3,12 @@ import multiprocessing
 import logging
 from abc import ABC, abstractclassmethod
 from typing import List, Any, Callable
-from .parall_synch_msgs import (
-    SynchTakeStep, SynchStepResult, SynchMsgs, SynchExit)
-from .interfaces import IProcessor, ProcCall, TimeInterval, IClock
+from .process_msgs import SynchStep, SynchStepResult, SynchExit
+from .interfaces import IProcessor, ProcCall, TimeInterval, IClock, Token
 from .manual_clock import ManualClock
 
 
-class ParallProcess(ABC):
+class Process(ABC):
     def __init__(self, mp_context: Any):
         self.conn, child_conn = mp_context.Pipe()
         kwargs={'processor_create_func': self.create_processor,
@@ -21,18 +20,19 @@ class ParallProcess(ABC):
     def join(self) -> None:
         self._process.join()
     
-    def send_take_step(self, clock: IClock) -> None:
-        self.conn.send(SynchTakeStep(clock)) 
+    def send_step(self, clock: IClock, tokens: List[Token]) -> None:
+        self.conn.send(SynchStep(clock, tokens)) 
         
-    def send_proc_calls(self, msgs: List[ProcCall]) -> None:
-        self.conn.send(SynchMsgs(msgs))
-
     def send_exit(self) -> None:
         self.conn.send(SynchExit())
         
     def recv_step_result(self) -> Any:
         return self.conn.recv()
     
+    @abstractclassmethod
+    def get_name(cls) -> str:
+        pass
+
     @abstractclassmethod
     def create_processor(cls) -> IProcessor:
         pass
@@ -43,16 +43,8 @@ class ParallProcess(ABC):
         while True:
             logging.info('{}: waiting to step'.format(os.getpid()))
             synch_msg = conn.recv()
-            if isinstance(synch_msg, SynchTakeStep):
-                processor.router.clock = synch_msg.clock
-                interval = processor.step()
-                # TODO set eng_names to None when no change
-                engine_names = [x.name for x in multi_engine.engines] 
-                conn.send(SynchStepResult(interval, 
-                                          multi_engine.router.pop_bounced(),
-                                          engine_names))
-            elif isinstance(synch_msg, SynchMsgs):
-                for msg in synch_msg.msgs:
-                    multi_engine.router.route(msg)
+            if isinstance(synch_msg, SynchStep):
+                step_result = processor.step(synch_msg.clock, synch_msg.tokens)
+                conn.send(SynchStepResult(step_result))
             else:
                 break
