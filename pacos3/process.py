@@ -12,11 +12,11 @@ from .processor import Processor
 class Process(ABC):
     def __init__(self, mp_context: Any, name: str, 
                  init_func: Callable[[Processor], None],
-                 respect_proc_readiness: bool):
+                 processor_kwargs: Dict):
         self._name = name
         self.conn, child_conn = mp_context.Pipe()
         kwargs={'init_func': init_func, 'conn': child_conn, 
-                'respect_proc_readiness': respect_proc_readiness}
+                'processor_kwargs': processor_kwargs}
         self._process = mp_context.Process(target=self._process_func, 
                                            kwargs=kwargs)
         self._process.start()
@@ -38,8 +38,8 @@ class Process(ABC):
         return self._name
 
     @staticmethod
-    def _process_func(name, init_func, conn, respect_proc_readiness):
-        processor = Processor(respect_proc_readiness, name)
+    def _process_func(name, init_func, conn, processor_kwargs):
+        processor = Processor(**processor_kwargs)
         init_func(processor)
         while True:
             logging.info('{}: waiting to step'.format(os.getpid()))
