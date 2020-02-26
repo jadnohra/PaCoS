@@ -11,7 +11,7 @@ class Processor(IProcessor):
     def __init__(self, respect_proc_readiness: True, name: str = None,
                  call_queue_rand: Random = None, 
                  call_source_rand: Random = None):
-        Addressable.__init__(self, name)
+        self._name = name
         self._actors = []
         self._call_sources = []
         self._name_actor_dict = {}
@@ -21,6 +21,9 @@ class Processor(IProcessor):
         self._respect_proc_readiness = respect_proc_readiness
         self._call_queue_rand = call_queue_rand
         self._call_source_rand = call_source_rand
+
+    def name(self) -> str:
+        return self._name
     
     def add_actor(self, actor: IActor) -> None:
         actor.init_address(self)
@@ -35,8 +38,7 @@ class Processor(IProcessor):
             if self._is_local_address(call.target):
                 self._call_pool.append(call)
             else:
-                self._remote_tokens.append(
-                                    Token(call).stamp(call.target, clock.time))
+                self._remote_tokens.append(Token(call, clock.time))
 
     def add_call_source(self, source: ICallSource) -> None:
         self._call_sources.append(source)
