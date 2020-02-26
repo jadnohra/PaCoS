@@ -1,22 +1,17 @@
-from .interfaces import IActor, List, IPin, Addressable
+from .interfaces import IActor, List, IProcedure, Addressable
 
 
 class Actor(IActor):
-    def __init__(self, name: str, pins: List[IPin]):
-        self._pins = pins
-        self._name_pin_dict = {pin.name:pin for pin in pins}
-        Addressable.__init__(self, name)
-
-    def init_address(self, parent: Addressable):
-        Addressable.init_address(self, parent)
-        for pin in self._pins:
-            pin.init_address(self)
+    def __init__(self, name: str, procedures: List[IProcedure]):
+        self._procedures = procedures
+        self._name_procedure_dict = {procedure.name:procedure 
+                                     for procedure in procedures}
 
     @property
-    def pins(self) -> List[IPin]:
-        return self._pins
+    def procedures(self) -> List[IProcedure]:
+        return self._procedures
 
-    def get_pin(self, pin_name: str) -> IPin:
-        if pin_name is None and len(self._pins) >= 0:
-            return self._pins[0]
-        return self._name_pin_dict.get(pin_name, None)
+    def get_procedure(self, procedure_name: str) -> IProcedure:
+        if procedure_name is None and len(self._procedures) >= 0:
+            return self._procedures[0]
+        return self._name_procedure_dict.get(procedure_name, None)

@@ -3,7 +3,6 @@ from enum import Enum, auto
 from typing import List, Tuple, Any
 from collections import namedtuple
 from .address import Address
-from .addressable import Addressable
 from .proc_call import ProcCall
 from .token import Token
 
@@ -36,7 +35,13 @@ class ProcState(Enum):
     WAITING = auto()
 
 
-class IProcedure(Addressable):
+class INamed(ABC):
+    @abstractproperty
+    def name(self) -> str:
+        pass
+
+
+class IProcedure(INamed):
     @abstractproperty
     def state(self) -> ProcState:
         pass
@@ -46,13 +51,13 @@ class IProcedure(Addressable):
         pass
 
 
-class IActor(Addressable):
+class IActor(INamed):
     @abstractproperty
-    def procs(self) -> List[IProcedure]:
+    def procedures(self) -> List[IProcedure]:
         pass
 
     @abstractmethod
-    def get_proc(self, name: str) -> IProcedure:
+    def get_procedure(self, name: str) -> IProcedure:
         pass
 
 
@@ -62,7 +67,7 @@ class StepResult:
         self.tokens = tokens
 
 
-class IProcessor(Addressable):
+class IProcessor(INamed):
     @abstractmethod
     def step(self, clock: IClock, tokens: List[Token]) -> StepResult:
         pass

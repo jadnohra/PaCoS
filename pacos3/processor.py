@@ -49,7 +49,7 @@ class Processor(IProcessor):
     def get_call_proc(self, call: ProcCall) -> IProcedure:
         actor_name = (call.target.actor if call.target.actor 
                       else call.source.actor)
-        return self.get_actor(actor_name).get_pin(call.target.proc)
+        return self.get_actor(actor_name).get_procedure(call.target.proc)
 
     def _generate_calls(self, clock: IClock) -> List[ProcCall]:
         if self._call_source_rand:
