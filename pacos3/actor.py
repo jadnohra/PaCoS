@@ -1,12 +1,18 @@
-from .interfaces import IActor, List, IProcedure, Addressable
+from typing import List
+from .interfaces import IActor, IProcedure
 
 
 class Actor(IActor):
     def __init__(self, name: str, procedures: List[IProcedure]):
+        self._name = name
         self._procedures = procedures
         self._name_procedure_dict = {procedure.name:procedure 
                                      for procedure in procedures}
 
+    @property
+    def name(self) -> str:
+        return self._name
+    
     @property
     def procedures(self) -> List[IProcedure]:
         return self._procedures

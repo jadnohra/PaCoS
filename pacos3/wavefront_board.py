@@ -26,7 +26,8 @@ class WavefrontBoard:
     def _forward_tokens(self, tokens: List[Token], time: Time):
         for token in tokens:
             idx = self._name_idx_dict[token.processor]
-            self._proc_states[idx].tokens.append(token.forward_board(time))
+            self._proc_states[idx].tokens.append(
+                                        token.forward_processor(None, time))
 
     def _step_parall(self, proc_indices: List[int]) -> List[TimeInterval]:
         intervals = []

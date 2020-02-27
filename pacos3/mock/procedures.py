@@ -40,7 +40,8 @@ class IdentProc(Procedure):
             return CallResult(0, [])
         if self._notif_func:
             self._notif_func(self, token, time)
-        return CallResult(self._processing_time, [token])
+        return CallResult(self._processing_time, 
+                          [token.forward_target(self._out_address, time)])
 
 
 class BufferProc(Procedure):

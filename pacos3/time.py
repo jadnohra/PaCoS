@@ -1,0 +1,2 @@
+Time = int
+TimeInterval = int

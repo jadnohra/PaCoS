@@ -25,15 +25,14 @@ class Processor(IProcessor):
         return self._name
     
     def add_actor(self, actor: IActor) -> None:
-        actor.init_address(self)
         self._actors.append(actor)
         self._name_actor_dict[actor.name] = actor
 
     def _is_local_address(self, address: Address):
-        return address.board is None and address.processor is None
+        return address.processor is None
 
-    def _put_tokens(self, calls: List[Token]) -> None:
-        for token in token:
+    def _put_tokens(self, tokens: List[Token]) -> None:
+        for token in tokens:
             if self._is_local_address(token.target):
                 self._token_pool.append(token)
             else:

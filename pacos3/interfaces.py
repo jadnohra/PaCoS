@@ -4,10 +4,7 @@ from typing import List, Tuple, Any
 from collections import namedtuple
 from .address import Address
 from .token import Token
-
-
-Time = int
-TimeInterval = int
+from .time import Time, TimeInterval
 
 
 class IClock(ABC):

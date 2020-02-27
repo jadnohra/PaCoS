@@ -1,8 +1,6 @@
-from collections import namedtuple
 from typing import List, Any
-import copy
-from .proc_call import ProcCall
-from .interfaces import IClock, Time, TimeInterval, Address
+from .time import Time, TimeInterval
+from .address import Address
 
 
 class Token:
@@ -27,9 +25,19 @@ class Token:
     def wire_time(self) -> TimeInterval:
         return self._stamps[-1].time - self._stamps[0].time
 
-    def forward_processor(self, time: Time) -> "Token":
+    def forward_processor(self, processor: str, time: Time) -> "Token":
         self._stamps.append(time)
-        self._target.processor = None
+        self._target.processor = processor
+        return self
+
+    def forward_actor(self, actor: str, time: Time) -> "Token":
+        self._stamps.append(time)
+        self._target.actor = actor
+        return self
+
+    def forward_target(self, target: Address, time: Time) -> "Token":
+        self._stamps.append(time)
+        self._target = target
         return self
 
     def __str__(self) -> str:

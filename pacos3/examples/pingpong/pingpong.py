@@ -37,13 +37,13 @@ def run():
     ping_actor = PingActor(3)
     processor.add_actor(ping_actor)
     processor.add_actor(PongActor())
-    processor.add_source(SingleShotSource(ping_actor.create_token(0)))
+    processor.add_source(SingleShotSource([ping_actor.create_token(0)]))
     clock = ManualClock()
     call_mode = CallMode(use_proc_state=False)
     while True:
-        interval = processor.step(clock.time, [], call_mode)
-        if interval > 0:
-            clock.advance(interval)
+        step_result = processor.step(clock.time, [], call_mode)
+        if step_result.interval > 0:
+            clock.advance(step_result.interval)
         else:
             break
 
