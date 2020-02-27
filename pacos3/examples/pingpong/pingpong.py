@@ -21,10 +21,11 @@ class PingActor(Actor):
         if self._pings_left > 0:
             logging.warning('time: {}, pings_left: {}'.format(time, self._pings_left))
             self._pings_left = self._pings_left - 1
-            return [self.create_token(time)]
+            return [self.create_out_token(time)]
         return []
 
-    def create_token(self, time: Time) -> Token:
+    @staticmethod
+    def create_out_token(time: Time) -> Token:
         return Token(Address(actor='pong'), None, time)
 
 class PongActor(Actor):

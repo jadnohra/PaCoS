@@ -22,12 +22,12 @@ class PingActor(Actor):
         if self._pings_left > 0:
             logging.warning('time: {}, pings_left: {}'.format(time, self._pings_left))
             self._pings_left = self._pings_left - 1
-            return [self.create_token(time)]
+            return [self.create_out_token(time)]
         self._pin.set_processing_time(0)
         return []
 
     @staticmethod
-    def create_token(time: Time) -> Token:
+    def create_out_token(time: Time) -> Token:
         return Token(Address(processor='B', actor='pong'), None, time)
 
 
@@ -39,7 +39,7 @@ class PongActor(Actor):
 
 def ping_main(processor: Processor) -> None:
     processor.add_actor(PingActor(3))
-    processor.add_source(SingleShotSource([PingActor.create_token(0)]))
+    processor.add_source(SingleShotSource([PingActor.create_out_token(0)]))
 
 
 def pong_main(processor: Processor) -> None:
