@@ -38,7 +38,7 @@ class Process(ABC):
         return self._name
 
     @staticmethod
-    def _process_func(name, main_func, conn, call_mode, processor_kwargs):
+    def _process_func(main_func, conn, call_mode, processor_kwargs):
         processor = Processor(**processor_kwargs)
         main_func(processor)
         while True:

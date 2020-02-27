@@ -31,12 +31,12 @@ class Board:
         self._proc_states = [self.ProcessState(mp_context,x) 
                              for x in process_configs]
         self._name_idx_dict = {process_configs[i].name: i 
-                               for i in len(process_configs)}
+                               for i in range(len(process_configs))}
         self._wave_time = 1
 
     def _forward_tokens(self, tokens: List[Token], time: Time):
         for token in tokens:
-            idx = self._name_idx_dict[token.processor]
+            idx = self._name_idx_dict[token.target.processor]
             self._proc_states[idx].tokens.append(
                                         token.forward_processor(None, time))
 
@@ -48,17 +48,18 @@ class Board:
             proc_state = self._proc_states[i]
             proc_state.process.send_step(synch_clock, proc_state.tokens)
         for i in proc_indices:
-            step_result = self._proc_states[i].process.recv_step_result()
+            step_result = self._proc_states[i].process\
+                            .recv_step_result().result
             intervals.append(step_result.interval)
             self._forward_tokens(step_result.tokens, 
                                  synch_clock.time + step_result.interval)
         for i, interval in enumerate(intervals):
             proc_state = self._proc_states[proc_indices[i]]
-            proc_state._wave_time = proc_state._wave_time + interval
+            proc_state.wave_time = proc_state.wave_time + interval
         return intervals
 
     def _is_steppable(self, proc_index: int) -> bool:
-        return self._proc_states[i].wave_time < self._wave_time
+        return self._proc_states[proc_index].wave_time < self._wave_time
 
     def _step(self, enable_speculate=True) -> TimeInterval:
         steppable_indices = [i for i in range(len(self._proc_states)) 

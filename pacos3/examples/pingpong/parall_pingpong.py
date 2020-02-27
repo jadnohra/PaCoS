@@ -1,6 +1,7 @@
 import sys
 from typing import List
 import logging
+import argparse
 from pacos3.interfaces import Address, Token, Time, CallMode
 from pacos3.actor import Actor
 from pacos3.mock.procedures import NullProc, IdentProc
@@ -47,12 +48,12 @@ def pong_main(processor: Processor) -> None:
 def run():
     print('=== parall-pingpong ===')
     board = Board([ProcessConfig('A', ping_main), 
-                   ProcessConfig('B', pong_main])])
+                   ProcessConfig('B', pong_main)])
     while True:
         interval = board.step()
         if interval == 0:
             break
-    parall_engine.join()
+    board.join()
 
 
 if __name__ == "__main__":
