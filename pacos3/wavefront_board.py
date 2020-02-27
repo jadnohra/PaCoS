@@ -50,8 +50,8 @@ class Board:
             proc_state = self._proc_states[i]
             proc_state.process.send_step(synch_clock, proc_state.tokens)
         for i in proc_indices:
-            step_result = self._proc_states[i].process\
-                            .recv_step_result().result
+            proc_state = self._proc_states[i]
+            step_result = proc_state.process.recv_step_result().result
             intervals.append(step_result.interval)
             self._forward_tokens(step_result.tokens, 
                                  synch_clock.time + step_result.interval)

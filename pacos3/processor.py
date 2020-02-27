@@ -46,10 +46,10 @@ class Processor(IProcessor):
             return self._actors[0]
         return self._name_actor_dict.get(actor_name, None)
 
-    def get_token_proc(self, call: Token) -> IProcedure:
-        actor_name = (call.target.actor if call.target.actor 
-                      else call.source.actor)
-        return self.get_actor(actor_name).get_procedure(call.target.proc)
+    def get_token_proc(self, token: Token) -> IProcedure:
+        actor_name = (token.target.actor if token.target.actor 
+                      else token.source.actor)
+        return self.get_actor(actor_name).get_procedure(token.target.proc)
 
     def _generate_tokens(self, time: Time) -> List[Token]:
         if self._token_source_rand:
@@ -65,13 +65,13 @@ class Processor(IProcessor):
         token = self._token_queue.pop()
         return self.get_token_proc(token).call(token, time, call_mode)
 
-    def _is_proc_ready(self, proc: IProcedure, call_mode: CallMode):
+    def _is_token_proc_ready(self, token: Token, call_mode: CallMode):
         return (not call_mode.use_proc_state 
-                or proc.state != ProcState.CLOSED)
+                or self.get_token_proc(token).state != ProcState.CLOSED)
 
     def _enqueue_ready_tokens(self, call_mode: CallMode) -> None:
-        ready_indices = [i for i, proc in enumerate(self._token_pool)
-                         if self._is_proc_ready(proc, call_mode)]
+        ready_indices = [i for i, token in enumerate(self._token_pool)
+                         if self._is_token_proc_ready(token, call_mode)]
         if self._token_queue_rand is not None:
             self._token_queue_rand.shuffle(ready_indices)
         # max one message, since the pin states may change after processing it
@@ -83,7 +83,7 @@ class Processor(IProcessor):
 
     def step(self, time: Time, tokens: List[Token], call_mode: CallMode
              ) -> StepResult:
-        self._put_tokens([x.call for x in tokens])
+        self._put_tokens(tokens)
         self._put_tokens(self._generate_tokens(time))
         self._enqueue_ready_tokens(call_mode)
         interval = 0
