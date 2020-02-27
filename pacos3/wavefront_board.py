@@ -3,24 +3,35 @@ import copy
 import logging
 import multiprocessing
 from typing import List, Tuple, Callable, Dict, Any
-from .interfaces import TimeInterval, Time, IClock, Token
+from .interfaces import TimeInterval, Time, IClock, Token, CallMode
 from .manual_clock import ManualClock
-from .process import Process
+from .process import Process, Processor
 
 
-class WavefrontBoard:
+class ProcessConfig:
+    def __init__(self, name: str, main_func: Callable[[Processor], None], *, 
+                call_mode: CallMode = CallMode(use_proc_state=True), 
+                processor_kwargs: Dict = {}):
+        self.name = name
+        self.main_func = main_func
+        self.call_mode = call_mode
+        self.processor_kwargs = processor_kwargs
+
+
+class Board:
     class ProcessState:
-        def __init__(self, process: Process):
-            self.process = process
+        def __init__(self, mp_context: Any, config: ProcessConfig):
+            self.process = Process(mp_context, config.name, config.call_mode,
+                                   config.main_func, config.processor_kwargs)
             self.wave_time = -1
             self.tokens = []
 
-    def __init__(self, mp_context: Any, 
-                 process_classes = List["ProcessClass"]):
-        self._proc_states = [self.ProcessState(proc_cls(mp_context)) 
-                             for proc_cls in process_classes]
-        self._name_idx_dict = {process_classes[i].get_name(): i
-                               for i in len(self._proc_states)}
+    def __init__(self, process_configs = List[ProcessConfig]):
+        mp_context = multiprocessing.get_context('spawn')
+        self._proc_states = [self.ProcessState(mp_context,x) 
+                             for x in process_configs]
+        self._name_idx_dict = {process_configs[i].name: i 
+                               for i in len(process_configs)}
         self._wave_time = 1
 
     def _forward_tokens(self, tokens: List[Token], time: Time):

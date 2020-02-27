@@ -1,6 +1,7 @@
 import sys
 from typing import List
 import logging
+import argparse
 from pacos3.interfaces import Address, Token, Time, CallMode
 from pacos3.actor import Actor
 from pacos3.mock.procedures import NullProc, IdentProc
@@ -34,7 +35,6 @@ class PongActor(Actor):
 
 def run():
     print('=== pingpong ===')
-    logging.basicConfig(level=logging.WARNING, format='%(levelname)s: %(message)s')
     processor = Processor()
     ping_actor = PingActor(3)
     processor.add_actor(ping_actor)
@@ -51,4 +51,9 @@ def run():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--log", default='WARNING')
+    args = parser.parse_args(sys.argv[1:])
+    logging.basicConfig(format='%(levelname)s: %(message)s',
+                        level=logging.getLevelName(args.log.upper()))
     run()

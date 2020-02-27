@@ -1,74 +1,55 @@
 import sys
-import logging
-import argparse
 from typing import List
-from pacos2.interfaces import IMsgRouter, Address, IMessage
-from pacos2.actor import Actor
-from pacos2.message import Message
-from pacos2.discr_evt_engine import DiscreteEventEngine
-from pacos2.mock.pins import NullPin, IdentPin
-from pacos2.discr_policies import MsgAlwaysReadyPolicy
-from pacos2.msg_routers import MultiEngineRouter
-from pacos2.multi_engine import MultiEngine, IMultiEngine
-from pacos2.parall_context import create_parall_context
-from pacos2.parall_process import ParallProcess
-from pacos2.parall_wavefront_engine import ParallWavefrontEngine
+import logging
+from pacos3.interfaces import Address, Token, Time, CallMode
+from pacos3.actor import Actor
+from pacos3.mock.procedures import NullProc, IdentProc
+from pacos3.mock.sources import SingleShotSource
+from pacos3.manual_clock import ManualClock
+from pacos3.processor import Processor
+from pacos3.process import Process
+from pacos3.wavefront_board import Board, ProcessConfig
 
 
 class PingActor(Actor):
-    def __init__(self, ping_count, pong_engine_name=None):
+    def __init__(self, ping_count: int):
         self._pings_left = ping_count
-        pin = NullPin('trigger', notif_func = self._on_trigger)
+        pin = NullProc('trigger', notif_func = self._on_trigger)
         super().__init__('ping', [pin])
 
-    def _on_trigger(self, _1, _2, router: IMsgRouter) -> None:
+    def _on_trigger(self, _1, _2, time: Time) -> List[Token]:
         if self._pings_left > 0:
-            print(self._pings_left)
+            logging.warning('time: {}, pings_left: {}'.format(time, self._pings_left))
             self._pings_left = self._pings_left - 1
-            router.route(self.create_msg())
+            return [self.create_token(time)]
+        return []
 
-    def create_msg(self) -> IMessage:
-        pong_actor_address = Address(engine='b', actor='pong')
-        return Message(self.address, pong_actor_address)
+    @staticmethod
+    def create_token(time: Time) -> Token:
+        return Token(Address(processor='B', actor='pong'), None, time)
+
 
 class PongActor(Actor):
-    def __init__(self, ping_engine_name=None):
-        ping_actor_address = Address(engine=ping_engine_name, actor='ping')
-        pin = IdentPin('trigger', ping_actor_address)
+    def __init__(self):
+        pin = IdentProc('trigger', Address(processor='A', actor='ping'))
         super().__init__('pong', [pin])
 
 
-class PingProcess(ParallProcess):
-    @classmethod
-    def create_multi_engine(cls) -> IMultiEngine:
-        engine_a = DiscreteEventEngine(name='a', 
-                                    msg_ready_policy=MsgAlwaysReadyPolicy())
-        ping_actor = PingActor(3, pong_engine_name='b')
-        engine_a.add_actor(ping_actor)
-        multieng = MultiEngine()
-        multieng.add_engine(engine_a)
-        return multieng
+def ping_main(processor: Processor) -> None:
+    processor.add_actor(PingActor(3))
+    processor.add_source(SingleShotSource([PingActor.create_token(0)]))
 
 
-class PongProcess(ParallProcess):
-    @classmethod
-    def create_multi_engine(cls) -> IMultiEngine:
-        engine_b = DiscreteEventEngine(name='b', 
-                                    msg_ready_policy=MsgAlwaysReadyPolicy())
-        pong_actor = PongActor(ping_engine_name='a')
-        engine_b.add_actor(pong_actor)
-        engine_b.put_msg(PingActor(1).create_msg())
-        multieng = MultiEngine()
-        multieng.add_engine(engine_b)
-        return multieng
-
+def pong_main(processor: Processor) -> None:
+    processor.add_actor(PongActor())
+    
 
 def run():
     print('=== parall-pingpong ===')
-    parall_engine = ParallWavefrontEngine(create_parall_context(),
-                                          [PingProcess, PongProcess])
+    board = Board([ProcessConfig('A', ping_main), 
+                   ProcessConfig('B', pong_main])])
     while True:
-        interval = parall_engine.step()
+        interval = board.step()
         if interval == 0:
             break
     parall_engine.join()
