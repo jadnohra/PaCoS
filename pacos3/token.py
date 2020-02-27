@@ -1,19 +1,19 @@
 from collections import namedtuple
-from typing import List
+from typing import List, Any
 import copy
 from .proc_call import ProcCall
 from .interfaces import IClock, Time, TimeInterval, Address
 
 
 class Token:
-    def __init__(self, call: ProcCall, time: Time):
-        self._call = call
-        self._target = copy.copy(call.target)
+    def __init__(self, target: Address, payload: Any, time: Time):
+        self._target = target
+        self._payload = payload
         self._stamps = [time]
     
     @property
-    def call(self) -> ProcCall:
-        return self._call
+    def payload(self) -> Any:
+        return self._payload
 
     @property
     def target(self) -> Address:
@@ -33,6 +33,6 @@ class Token:
         return self
 
     def __str__(self) -> str:
-        return '{} @ [{}]'.format(
-                            self.call,
+        return '{} -> {} @ [{}]'.format(
+                            self._payload, self._target,
                             ', '.join([str(x) for x in self._stamps]))

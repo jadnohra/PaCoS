@@ -1,27 +1,26 @@
-from typing import Callable
-from ..interfaces import IMessage, IClock, TimeInterval, Time
-from ..discr_impulse import IDiscreteImpulse, DiscreteEventEngine
+from typing import Callable, List, Any
+from pacos3.interfaces import ITokenSource, Token, Time, TimeInterval
 
 
-class PeriodicImpulse(IDiscreteImpulse):
-    def __init__(self, gen_msgs_func: Callable[[], IMessage], 
+GenFuncType = Callable[[Any, Time], List[Token]]
+
+
+class PeriodicSource(ITokenSource):
+    def __init__(self, gen_funcs: List[GenFuncType], 
                  interval :TimeInterval = 1,
                  first_time :Time = 0):
-        self.gen_msgs_func = gen_msgs_func
-        self.interval = interval
-        self.next_time = first_time
+        self._gen_funcs = gen_funcs
+        self._interval = interval
+        self._next_time = first_time
 
-    def generate(self, engine: DiscreteEventEngine, clock: IClock
-                 ) -> TimeInterval:
-        trigger_count = (((clock.time + self.interval) - self.next_time) 
-                         / self.interval)
-        spent_interval = 0
+    def generate(self, time: Time) -> List[Token]:
+        trigger_count = (((time + self._interval) - self._next_time) 
+                         / self._interval)
+        rets = []
         while trigger_count > 0:
-            for msg in self.gen_msgs_func(self, clock):
-                engine.put_msg(msg)
+            rets.append(sum([x(self, time) for x in self._gen_funcs], []))
             trigger_count = trigger_count - 1
-            spent_interval = self.interval
-        return spent_interval
+        return sum(rets, [])
 
 
 '''

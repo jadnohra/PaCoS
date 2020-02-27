@@ -3,7 +3,6 @@ from enum import Enum, auto
 from typing import List, Tuple, Any
 from collections import namedtuple
 from .address import Address
-from .proc_call import ProcCall
 from .token import Token
 
 
@@ -17,14 +16,14 @@ class IClock(ABC):
         pass
 
 
-class ICallSource(ABC):
+class ITokenSource(ABC):
     @abstractmethod
-    def generate(self, clock: IClock) -> List[ProcCall]:
+    def generate(self, time: Time) -> List[Token]:
         pass
 
 
-class ProcResult:
-    def __init__(self, interval: TimeInterval, calls: List[ProcCall]):
+class CallResult:
+    def __init__(self, interval: TimeInterval, calls: List[Token]):
         self.interval = interval
         self.calls = calls
 
@@ -33,11 +32,18 @@ class ProcState(Enum):
     CLOSED = auto()
     OPEN = auto()
     WAITING = auto()
+    DROPPING = auto()
 
 
 class INamed(ABC):
     @abstractproperty
     def name(self) -> str:
+        pass
+
+
+class CallMode:
+    def __init__(self, use_proc_state):
+        self.use_proc_state = use_proc_state
         pass
 
 
@@ -47,7 +53,7 @@ class IProcedure(INamed):
         pass
 
     @abstractmethod
-    def execute(self, call: ProcCall) -> ProcResult:
+    def call(self, token: Token, time: Time, mode: CallMode) -> CallResult:
         pass
 
 
