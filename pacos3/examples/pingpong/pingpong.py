@@ -1,5 +1,6 @@
 import sys
 from typing import List
+import logging
 from pacos3.interfaces import Address, Token, Time, CallMode
 from pacos3.actor import Actor
 from pacos3.mock.procedures import NullProc, IdentProc
@@ -17,7 +18,7 @@ class PingActor(Actor):
 
     def _on_trigger(self, _1, _2, time: Time) -> List[Token]:
         if self._pings_left > 0:
-            print(self._pings_left)
+            logging.warning('time: {}, pings_left: {}'.format(time, self._pings_left))
             self._pings_left = self._pings_left - 1
             return [self.create_token(time)]
         return []
@@ -33,6 +34,7 @@ class PongActor(Actor):
 
 def run():
     print('=== pingpong ===')
+    logging.basicConfig(level=logging.WARNING, format='%(levelname)s: %(message)s')
     processor = Processor()
     ping_actor = PingActor(3)
     processor.add_actor(ping_actor)
