@@ -11,18 +11,20 @@ from .process import Process, Processor
 class ProcessConfig:
     def __init__(self, name: str, main_func: Callable[[Processor], None], *, 
                 call_mode: CallMode = CallMode(use_proc_state=True), 
-                processor_kwargs: Dict = {}):
+                processor_kwargs: Dict = {}, log_level: str = 'WARNING'):
         self.name = name
         self.main_func = main_func
         self.call_mode = call_mode
         self.processor_kwargs = processor_kwargs
+        self.log_level = log_level
 
 
 class Board:
     class ProcessState:
         def __init__(self, mp_context: Any, config: ProcessConfig):
             self.process = Process(mp_context, config.name, config.call_mode,
-                                   config.main_func, config.processor_kwargs)
+                                   config.main_func, config.processor_kwargs,
+                                   config.log_level)
             self.wave_time = -1
             self.tokens = []
 
@@ -64,7 +66,6 @@ class Board:
     def _step(self, enable_speculate=True) -> TimeInterval:
         steppable_indices = [i for i in range(len(self._proc_states)) 
                              if self._is_steppable(i)]
-        print('XXX', steppable_indices)
         if len(steppable_indices) == 0:
             if enable_speculate:
                 wave_time = max([x.wave_time for x in self._proc_states])
@@ -81,6 +82,9 @@ class Board:
 
     def step(self) -> TimeInterval:
         return self._step()
+
+    def has_tokens(self) -> bool:
+        return sum([len(x.tokens) for x in self._proc_states]) > 0
 
     def join(self) -> None:
         for proc_state in self._proc_states:

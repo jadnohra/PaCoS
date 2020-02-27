@@ -12,11 +12,13 @@ from .processor import Processor
 class Process(ABC):
     def __init__(self, mp_context: Any, name: str, call_mode: CallMode,
                  main_func: Callable[[Processor], None],
-                 processor_kwargs: Dict = None):
+                 processor_kwargs: Dict = None,
+                 log_level: str = 'WARNING'):
         self._name = name
         self.conn, child_conn = mp_context.Pipe()
         kwargs={'main_func': main_func, 'conn': child_conn, 
-                'call_mode': call_mode, 'processor_kwargs': processor_kwargs}
+                'call_mode': call_mode, 'processor_kwargs': processor_kwargs,
+                'log_level': log_level}
         self._process = mp_context.Process(target=self._process_func, 
                                            kwargs=kwargs)
         self._process.start()
@@ -38,13 +40,15 @@ class Process(ABC):
         return self._name
 
     @staticmethod
-    def _process_func(main_func, conn, call_mode, processor_kwargs):
+    def _process_func(main_func, conn, call_mode, processor_kwargs, log_level):
         processor = Processor(**processor_kwargs)
+        logging.basicConfig(format='%(levelname)s-%(process)d: %(message)s',
+                        level=logging.getLevelName(log_level.upper()))
         main_func(processor)
         while True:
-            logging.info('{}: waiting to step'.format(os.getpid()))
             synch_msg = conn.recv()
             if isinstance(synch_msg, SynchStep):
+                logging.info('stepping')
                 step_result = processor.step(synch_msg.clock.time, 
                                              synch_msg.tokens, call_mode)
                 conn.send(SynchStepResult(step_result))

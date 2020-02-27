@@ -45,13 +45,13 @@ def pong_main(processor: Processor) -> None:
     processor.add_actor(PongActor())
     
 
-def run():
+def run(log_level: str = 'WARNING'):
     print('=== parall-pingpong ===')
-    board = Board([ProcessConfig('A', ping_main), 
-                   ProcessConfig('B', pong_main)])
+    board = Board([ProcessConfig('A', ping_main, log_level=log_level), 
+                   ProcessConfig('B', pong_main, log_level=log_level)])
     while True:
         interval = board.step()
-        if interval == 0:
+        if not board.has_tokens() and interval == 0:
             break
     board.join()
 
@@ -62,4 +62,4 @@ if __name__ == "__main__":
     args = parser.parse_args(sys.argv[1:])
     logging.basicConfig(format='%(levelname)s:%(message)s',
                         level=logging.getLevelName(args.log.upper()))
-    run()
+    run(args.log)
