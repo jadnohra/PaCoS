@@ -87,7 +87,7 @@ class Processor(IProcessor):
         self._put_tokens(self._generate_tokens(time))
         self._enqueue_ready_tokens(call_mode)
         interval = 0
-        while len(self._token_queue) > 0:
+        if len(self._token_queue) > 0:
             proc_result = self._pop_queue_token(time, call_mode)
             interval = interval + proc_result.interval
             self._put_tokens(proc_result.calls)
