@@ -15,14 +15,15 @@ from pacos3.wavefront_board import Board, ProcessConfig
 class PingActor(Actor):
     def __init__(self, ping_count: int):
         self._pings_left = ping_count
-        pin = NullProc('trigger', notif_func = self._on_trigger)
-        super().__init__('ping', [pin])
+        self._pin = NullProc('trigger', notif_func = self._on_trigger)
+        super().__init__('ping', [self._pin])
 
     def _on_trigger(self, _1, _2, time: Time) -> List[Token]:
         if self._pings_left > 0:
             logging.warning('time: {}, pings_left: {}'.format(time, self._pings_left))
             self._pings_left = self._pings_left - 1
             return [self.create_token(time)]
+        self._pin.set_processing_time(0)
         return []
 
     @staticmethod

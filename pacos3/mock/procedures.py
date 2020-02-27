@@ -15,6 +15,9 @@ class NullProc(Procedure):
         self._notif_func = notif_func
         self._processing_time = processing_time
 
+    def set_processing_time(self, processing_time: int) -> None:
+        self._processing_time = processing_time
+
     def call(self, token: Token, time: Time, mode: CallMode) -> CallResult:
         if not super().should_process(token, time, mode):
             return CallResult(0, [])

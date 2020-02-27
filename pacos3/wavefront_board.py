@@ -49,6 +49,7 @@ class Board:
         for i in proc_indices:
             proc_state = self._proc_states[i]
             proc_state.process.send_step(synch_clock, proc_state.tokens)
+            proc_state.tokens = []
         for i in proc_indices:
             proc_state = self._proc_states[i]
             step_result = proc_state.process.recv_step_result().result
