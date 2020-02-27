@@ -64,6 +64,7 @@ class Board:
     def _step(self, enable_speculate=True) -> TimeInterval:
         steppable_indices = [i for i in range(len(self._proc_states)) 
                              if self._is_steppable(i)]
+        print('XXX', steppable_indices)
         if len(steppable_indices) == 0:
             if enable_speculate:
                 wave_time = max([x.wave_time for x in self._proc_states])
