@@ -6,7 +6,7 @@ from pacos3.interfaces import (
 from pacos3.procedure import Procedure
 
 
-class NullProc(Procedure):
+class NotifProc(Procedure):
     def __init__(
           self, name: str, state: ProcState = ProcState.OPEN, 
           notif_func: Callable[[IProcedure, Token, Time], List[Token]] = None,

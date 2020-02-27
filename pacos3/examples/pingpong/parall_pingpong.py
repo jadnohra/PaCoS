@@ -4,7 +4,7 @@ import logging
 import argparse
 from pacos3.interfaces import Address, Token, Time, CallMode
 from pacos3.actor import Actor
-from pacos3.mock.procedures import NullProc, IdentProc
+from pacos3.mock.procedures import NotifProc, IdentProc
 from pacos3.mock.sources import SingleShotSource
 from pacos3.manual_clock import ManualClock
 from pacos3.processor import Processor
@@ -15,7 +15,7 @@ from pacos3.wavefront_board import Board, ProcessConfig
 class PingActor(Actor):
     def __init__(self, ping_count: int):
         self._pings_left = ping_count
-        self._pin = NullProc('trigger', notif_func = self._on_trigger)
+        self._pin = NotifProc('trigger', notif_func = self._on_trigger)
         super().__init__('ping', [self._pin])
 
     def _on_trigger(self, _1, _2, time: Time) -> List[Token]:
