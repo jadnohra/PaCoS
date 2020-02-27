@@ -20,6 +20,7 @@ class PingActor(Actor):
 
     def _on_trigger(self, _1, _2, time: Time) -> List[Token]:
         if self._pings_left > 0:
+            print('XXX')
             logging.warning('time: {}, pings_left: {}'.format(time, self._pings_left))
             self._pings_left = self._pings_left - 1
             return [self.create_token(time)]
