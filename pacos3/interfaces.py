@@ -42,7 +42,7 @@ class INamed(ABC):
 
 
 class CallMode:
-    def __init__(self, use_proc_state):
+    def __init__(self, use_proc_state: bool):
         self.use_proc_state = use_proc_state
         pass
 
@@ -75,5 +75,6 @@ class StepResult:
 
 class IProcessor(INamed):
     @abstractmethod
-    def step(self, clock: IClock, tokens: List[Token]) -> StepResult:
+    def step(self, time: Time, tokens: List[Token], 
+             call_mode: CallMode) -> StepResult:
         pass

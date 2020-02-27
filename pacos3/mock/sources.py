@@ -5,6 +5,18 @@ from pacos3.interfaces import ITokenSource, Token, Time, TimeInterval
 GenFuncType = Callable[[Any, Time], List[Token]]
 
 
+class SingleShotSource(ITokenSource):
+    def __init__(self, tokens: List[Token], shot_time :Time = 0):
+        self._tokens = tokens
+        self._next_time = shot_time
+
+    def generate(self, time: Time) -> List[Token]:
+        if time >= self._next_time:
+            ret, self._tokens = self._tokens, []
+            return ret
+        return []
+
+
 class PeriodicSource(ITokenSource):
     def __init__(self, gen_funcs: List[GenFuncType], 
                  interval :TimeInterval = 1,

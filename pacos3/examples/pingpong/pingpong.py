@@ -1,48 +1,49 @@
 import sys
 from typing import List
-from pacos2.interfaces import IMsgRouter, Address, IMessage
-from pacos2.actor import Actor
-from pacos2.message import Message
-from pacos2.discr_evt_engine import DiscreteEventEngine
-from pacos2.mock.pins import NullPin, IdentPin
-from pacos2.manual_clock import ManualClock
-from pacos2.discr_policies import MsgAlwaysReadyPolicy
-from pacos2.msg_routers import SingleEngineRouter
+from pacos3.interfaces import Address, Token, Time, CallMode
+from pacos3.actor import Actor
+from pacos3.mock.procedures import NullProc, IdentProc
+from pacos3.mock.sources import SingleShotSource
+from pacos3.manual_clock import ManualClock
+from pacos3.processor import Processor
+
 
 
 class PingActor(Actor):
-    def __init__(self, ping_count):
+    def __init__(self, ping_count: int):
         self._pings_left = ping_count
-        pin = NullPin('trigger', notif_func = self._on_trigger)
+        pin = NullProc('trigger', notif_func = self._on_trigger)
         super().__init__('ping', [pin])
 
-    def _on_trigger(self, _1, _2, router: IMsgRouter) -> None:
+    def _on_trigger(self, _1, _2, time: Time) -> List[Token]:
         if self._pings_left > 0:
             print(self._pings_left)
             self._pings_left = self._pings_left - 1
-            router.route(self.create_msg())
+            return [self.create_token(time)]
+        return []
 
-    def create_msg(self) -> IMessage:
-        return Message(self.address, Address(actor='pong'))
+    def create_token(self, time: Time) -> Token:
+        return Token(Address(actor='pong'), None, time)
 
 class PongActor(Actor):
     def __init__(self):
-        pin = IdentPin('trigger', Address(actor='ping'))
+        pin = IdentProc('trigger', Address(actor='ping'))
         super().__init__('pong', [pin])
 
 
 def run():
     print('=== pingpong ===')
-    engine = DiscreteEventEngine(msg_ready_policy=MsgAlwaysReadyPolicy())
+    processor = Processor()
     ping_actor = PingActor(3)
-    engine.add_actor(ping_actor)
-    engine.add_actor(PongActor())
-    engine.put_msg(ping_actor.create_msg())
-    router = SingleEngineRouter(ManualClock(), engine)
+    processor.add_actor(ping_actor)
+    processor.add_actor(PongActor())
+    processor.add_source(SingleShotSource(ping_actor.create_token(0)))
+    clock = ManualClock()
+    call_mode = CallMode(use_proc_state=False)
     while True:
-        interval = engine.step(router)
+        interval = processor.step(clock.time, [], call_mode)
         if interval > 0:
-            router.clock.advance(interval)
+            clock.advance(interval)
         else:
             break
 
