@@ -5,35 +5,22 @@ import multiprocessing
 from typing import List, Tuple, Callable, Dict, Any
 from .interfaces import TimeInterval, Time, IClock, Token, CallMode
 from .manual_clock import ManualClock
-from .process import Process, Processor
-
-
-class ProcessConfig:
-    def __init__(self, name: str, main_func: Callable[[Processor], None], *, 
-                call_mode: CallMode = CallMode(use_proc_state=True), 
-                processor_kwargs: Dict = {}, log_level: str = 'WARNING'):
-        self.name = name
-        self.main_func = main_func
-        self.call_mode = call_mode
-        self.processor_kwargs = processor_kwargs
-        self.log_level = log_level
+from .processor import ProcessorConfig, Processor, ProcessorIPC
 
 
 class Board:
     class ProcessState:
-        def __init__(self, mp_context: Any, config: ProcessConfig):
-            self.process = Process(mp_context, config.name, config.call_mode,
-                                   config.main_func, config.processor_kwargs,
-                                   config.log_level)
+        def __init__(self, config: ProcessorConfig, mp_context: Any):
+            self.process_ipc = Processor.mp_create(config, mp_context, False)
             self.wave_time = -1
             self.tokens = []
 
-    def __init__(self, process_configs = List[ProcessConfig]):
+    def __init__(self, processor_configs = List[ProcessorConfig]):
         mp_context = multiprocessing.get_context('spawn')
         self._proc_states = [self.ProcessState(mp_context,x) 
-                             for x in process_configs]
-        self._name_idx_dict = {process_configs[i].name: i 
-                               for i in range(len(process_configs))}
+                             for x in processor_configs]
+        self._name_idx_dict = {processor_configs[i].name: i 
+                               for i in range(len(processor_configs))}
         self._wave_time = 1
 
     def _forward_tokens(self, tokens: List[Token], time: Time):
@@ -48,11 +35,11 @@ class Board:
         logging.info('{}: send take_step {}'.format(os.getpid(), proc_indices))
         for i in proc_indices:
             proc_state = self._proc_states[i]
-            proc_state.process.send_step(synch_clock, proc_state.tokens)
+            proc_state.process_ipc.send_step(synch_clock, proc_state.tokens)
             proc_state.tokens = []
         for i in proc_indices:
             proc_state = self._proc_states[i]
-            step_result = proc_state.process.recv_step_result().result
+            step_result = proc_state.process_ipc.recv_step_result().result
             intervals.append(step_result.interval)
             self._forward_tokens(step_result.tokens, 
                                  synch_clock.time + step_result.interval)
@@ -89,5 +76,5 @@ class Board:
 
     def join(self) -> None:
         for proc_state in self._proc_states:
-            proc_state.process.send_exit()
-            proc_state.process.join()
+            proc_state.process_ipc.send_exit()
+            proc_state.process_ipc.join()

@@ -1,9 +1,9 @@
 from typing import List
-from .interfaces import IClock, StepResult, Token
+from .interfaces import Time, StepResult, Token
 
 
 class SynchStep:
-     def __init__(self, clock: IClock, tokens: List[Token]):
+     def __init__(self, time: Time, tokens: List[Token]):
         self.clock = clock
         self.tokens = tokens
 

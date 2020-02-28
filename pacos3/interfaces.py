@@ -20,7 +20,7 @@ class ITokenSource(ABC):
 
 
 class CallResult:
-    def __init__(self, interval: TimeInterval, calls: List[Token]):
+    def __init__(self, interval: TimeInterval = 0, calls: List[Token] = []):
         self.interval = interval
         self.calls = calls
 
@@ -28,19 +28,11 @@ class CallResult:
 class ProcState(Enum):
     CLOSED = auto()
     OPEN = auto()
-    WAITING = auto()
-    DROPPING = auto()
 
 
 class INamed(ABC):
     @abstractproperty
     def name(self) -> str:
-        pass
-
-
-class CallMode:
-    def __init__(self, use_proc_state: bool):
-        self.use_proc_state = use_proc_state
         pass
 
 
@@ -50,7 +42,7 @@ class IProcedure(INamed):
         pass
 
     @abstractmethod
-    def call(self, token: Token, time: Time, mode: CallMode) -> CallResult:
+    def call(self, token: Token, time: Time) -> CallResult:
         pass
 
 
@@ -72,6 +64,5 @@ class StepResult:
 
 class IProcessor(INamed):
     @abstractmethod
-    def step(self, time: Time, tokens: List[Token], 
-             call_mode: CallMode) -> StepResult:
+    def step(self, time: Time, tokens: List[Token]) -> StepResult:
         pass
