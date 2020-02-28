@@ -205,7 +205,6 @@ class Processor(IProcessor, IProcessorAPI):
         self._put_tokens(board_tokens)
         self._enqueue_ready_tokens()
         if capture_paused_time and len(self._token_queue) > 0:
-            logging.error('{} {}'.format(self._token_queue[0], self.api.time))
             time_diff = self._token_queue[0].last_time - self.api.time
             self._paused_time = self._paused_time + max(0, time_diff)
         pre_step_count = self._step_counter
