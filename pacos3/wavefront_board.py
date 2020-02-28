@@ -21,7 +21,7 @@ class Board:
                              for config in processor_configs]
         self._name_idx_dict = {processor_configs[i].name: i 
                                for i in range(len(processor_configs))}
-        self._wave_time = 1
+        self._wave_time = 0
 
     def _forward_tokens(self, tokens: List[Token], time: Time):
         for token in tokens:
