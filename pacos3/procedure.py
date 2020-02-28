@@ -1,5 +1,6 @@
 import logging
-from .interfaces import IProcedure, ProcState, Token, Time
+from .interfaces import (
+            IProcedure, ProcState, Token, IProcessorState, CallResult)
 
 
 class Procedure(IProcedure):
@@ -18,6 +19,9 @@ class Procedure(IProcedure):
     @state.setter
     def state(self, state: ProcState) -> None:
         self._state = state
+
+    def call(self, token: Token, processor: IProcessorState) -> CallResult:
+        return CallResult()
 
     def __str__(self) -> str:
         return '{} ({})'.format(self.name, self.state)

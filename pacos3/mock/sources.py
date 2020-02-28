@@ -1,17 +1,17 @@
 from typing import Callable, List, Any
-from pacos3.interfaces import ITokenSource, Token, Time, TimeInterval
+from pacos3.interfaces import ITokenSource, Token, IProcessorState, StepCount
 
 
-GenFuncType = Callable[[Any, Time], List[Token]]
+GenFuncType = Callable[[Any, IProcessorState], List[Token]]
 
 
 class SingleShotSource(ITokenSource):
-    def __init__(self, tokens: List[Token], shot_time :Time = 0):
+    def __init__(self, tokens: List[Token], shot_step :StepCount = 0):
         self._tokens = tokens
-        self._next_time = shot_time
+        self._shot_step = shot_step
 
-    def generate(self, time: Time) -> List[Token]:
-        if time >= self._next_time:
+    def generate(self, processor: IProcessorState) -> List[Token]:
+        if processor.step_count >= self._shot_step:
             ret, self._tokens = self._tokens, []
             return ret
         return []
@@ -19,18 +19,18 @@ class SingleShotSource(ITokenSource):
 
 class PeriodicSource(ITokenSource):
     def __init__(self, gen_funcs: List[GenFuncType], 
-                 interval :TimeInterval = 1,
-                 first_time :Time = 0):
+                 step_interval :StepCount = 1,
+                 first_step :StepCount = 0):
         self._gen_funcs = gen_funcs
-        self._interval = interval
-        self._next_time = first_time
+        self._interval = step_interval
+        self._next_step = first_step
 
-    def generate(self, time: Time) -> List[Token]:
-        trigger_count = (((time + self._interval) - self._next_time) 
-                         / self._interval)
+    def generate(self, processor: IProcessorState) -> List[Token]:
+        trigger_count = (((processor.step_count + self._interval) 
+                           - self._next_step) / self._interval)
         rets = []
         while trigger_count > 0:
-            rets.append(sum([x(self, time) for x in self._gen_funcs], []))
+            rets.append(sum([x(self, processor) for x in self._gen_funcs], []))
             trigger_count = trigger_count - 1
         return sum(rets, [])
 

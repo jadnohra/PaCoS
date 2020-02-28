@@ -1,2 +1,3 @@
-Time = int
-TimeInterval = int
+Time = float
+TimeInterval = float
+StepCount = int

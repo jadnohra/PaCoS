@@ -4,9 +4,10 @@ import logging
 from random import Random
 from abc import ABC, abstractmethod
 from typing import List, Any, Callable, Dict
+from .time import TimeInterval, Time, StepCount
 from .interfaces import (
-    Address, TimeInterval, ITokenSource, IActor, IProcedure, Time, IClock,
-    ProcState, CallResult, StepResult, IProcessor, Token)
+    Address, ITokenSource, IActor, IProcedure, IProcessorState, ProcState, 
+    CallResult, StepResult, IProcessor, Token)
 from .ipc import SynchStep, SynchStepResult, SynchExit
 
 
@@ -14,10 +15,12 @@ class ProcessorConfig:
     def __init__(self, *,
                 main: Callable[['Processor'], None] = None,
                 name: str = None,
+                frequency: float = 1000000000.0,  # 1 Ghz
                 call_queue_rand: Random = None, 
                 call_source_rand: Random = None,
                 log_level: str = 'WARNING'):
         self.main_func = main
+        self.frequency = frequency
         self.name = name
         self.call_queue_rand = call_queue_rand
         self.call_source_rand = call_source_rand
@@ -36,8 +39,8 @@ class ProcessorIPC:
     def join(self) -> None:
         self._process.join()
     
-    def send_step(self, clock: IClock, tokens: List[Token]) -> None:
-        self._conn.send(SynchStep(clock, tokens)) 
+    def send_step(self, paused_time: TimeInterval, tokens: List[Token]) -> None:
+        self._conn.send(SynchStep(paused_time, tokens)) 
         
     def send_exit(self) -> None:
         self._conn.send(SynchExit())
@@ -50,10 +53,13 @@ class ProcessorIPC:
         return self._name
 
 
-class Processor(IProcessor):
+class Processor(IProcessor, IProcessorState):
     def __init__(self, config: ProcessorConfig = ProcessorConfig(), 
                  log_pid: bool = False):
         self._name = config.name
+        self._step_counter = 0
+        self._frequency = config.frequency
+        self._paused_time = 0
         self._actors = []
         self._sources = []
         self._name_actor_dict = {}
@@ -95,9 +101,25 @@ class Processor(IProcessor):
             else:
                 break
 
+    @property
     def name(self) -> str:
         return self._name
+
+    @property
+    def state(self) -> IProcessorState:
+        return self
     
+    @property
+    def step_count(self) -> StepCount:
+        return self._step_counter
+
+    @property
+    def frequency(self) -> float:
+        return self._frequency
+
+    def get_time(self, including_paused=False) -> TimeInterval:
+        pass
+
     def add_actor(self, actor: IActor) -> None:
         self._actors.append(actor)
         self._name_actor_dict[actor.name] = actor
@@ -125,19 +147,19 @@ class Processor(IProcessor):
                       else token.source.actor)
         return self.get_actor(actor_name).get_procedure(token.target.proc)
 
-    def _generate_tokens(self, time: Time) -> List[Token]:
+    def _generate_tokens(self) -> List[Token]:
         if self._token_source_rand:
             sources = copy.copy(self._sources)
             self._token_source_rand.shuffle(sources)
         else:
             sources = reversed(self._sources)
-        return sum([source.generate(time) for source in sources], [])
+        return sum([source.generate(self) for source in sources], [])
 
-    def _pop_queue_token(self, time: Time) -> CallResult:
+    def _pop_queue_token(self) -> CallResult:
         if len(self._token_queue) == 0:
             return 0
         token = self._token_queue.pop()
-        return self.get_token_proc(token).call(token, time)
+        return self.get_token_proc(token).call(token, self)
 
     def _is_token_proc_ready(self, token: Token):
         return self.get_token_proc(token).state != ProcState.CLOSED
@@ -153,15 +175,16 @@ class Processor(IProcessor):
         for i in sorted(ready_indices, reverse=True):
             self._token_pool.pop(i)
 
-    def step(self, time: Time, tokens: List[Token]) -> StepResult:
-        self._put_tokens(tokens)
-        self._put_tokens(self._generate_tokens(time))
+    def step(self, incoming_tokens: List[Token]=[], 
+             paused_time: TimeInterval=0.0) -> StepResult:
+        self._put_tokens(incoming_tokens)
+        self._put_tokens(self._generate_tokens())
         self._enqueue_ready_tokens()
-        interval = 0
+        pre_step_count = self._step_counter
         if len(self._token_queue) > 0:
-            proc_result = self._pop_queue_token(time)
-            interval = interval + proc_result.interval
+            proc_result = self._pop_queue_token()
+            self._step_counter = self._step_counter + proc_result.step_count
             self._put_tokens(proc_result.calls)
             self._enqueue_ready_tokens()
         tokens, self._remote_tokens = self._remote_tokens, []
-        return StepResult(interval, tokens)
+        return StepResult(self._step_counter - pre_step_count, tokens)

@@ -4,30 +4,7 @@ from typing import List, Tuple, Any
 from collections import namedtuple
 from .address import Address
 from .token import Token
-from .time import Time, TimeInterval
-
-
-class IClock(ABC):
-    @abstractmethod
-    def time(self) -> Time:
-        pass
-
-
-class ITokenSource(ABC):
-    @abstractmethod
-    def generate(self, time: Time) -> List[Token]:
-        pass
-
-
-class CallResult:
-    def __init__(self, interval: TimeInterval = 0, calls: List[Token] = []):
-        self.interval = interval
-        self.calls = calls
-
-
-class ProcState(Enum):
-    CLOSED = auto()
-    OPEN = auto()
+from .time import Time, TimeInterval, StepCount
 
 
 class INamed(ABC):
@@ -36,13 +13,44 @@ class INamed(ABC):
         pass
 
 
+class IProcessorState(INamed):
+    @abstractproperty
+    def step_count(self) -> StepCount:
+        pass
+
+    @abstractproperty
+    def frequency(self) -> float:
+        pass
+
+    @abstractmethod
+    def get_time(self, including_paused=False) -> TimeInterval:
+        pass
+
+
+class CallResult:
+    def __init__(self, step_count: StepCount = 0, calls: List[Token] = []):
+        self.step_count = step_count
+        self.calls = calls
+
+
+class ProcState(Enum):
+    CLOSED = auto()
+    OPEN = auto()
+
+
 class IProcedure(INamed):
     @abstractproperty
     def state(self) -> ProcState:
         pass
 
     @abstractmethod
-    def call(self, token: Token, time: Time) -> CallResult:
+    def call(self, token: Token, processor: IProcessorState) -> CallResult:
+        pass
+
+
+class ITokenSource(ABC):
+    @abstractmethod
+    def generate(self, processor: IProcessorState) -> List[Token]:
         pass
 
 
@@ -57,12 +65,17 @@ class IActor(INamed):
 
 
 class StepResult:
-    def __init__(self, interval: TimeInterval, tokens: List[Token]):
-        self.interval = interval
+    def __init__(self, step_count: StepCount, tokens: List[Token]):
+        self.step_count = step_count
         self.tokens = tokens
 
 
-class IProcessor(INamed):
+class IProcessor:
     @abstractmethod
-    def step(self, time: Time, tokens: List[Token]) -> StepResult:
+    def step(self, incoming_tokens: List[Token]=[], 
+             paused_time: TimeInterval=0.0) -> StepResult:
+        pass
+
+    @abstractmethod
+    def state(self) -> IProcessorState:
         pass

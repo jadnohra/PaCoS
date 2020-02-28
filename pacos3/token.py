@@ -1,10 +1,9 @@
 from typing import List, Any
-from .time import Time, TimeInterval
 from .address import Address
 
 
 class Token:
-    def __init__(self, target: Address, payload: Any, time: Time):
+    def __init__(self, target: Address, payload: Any, time: Any):
         self._target = target
         self._payload = payload
         self._stamps = [time]
@@ -18,24 +17,24 @@ class Token:
         return self._target
 
     @property
-    def emission_time(self) -> Time:
+    def emission_time(self) -> Any:
         return self._stamps[0].time
 
     @property
-    def wire_time(self) -> TimeInterval:
+    def wire_time(self) -> Any:
         return self._stamps[-1].time - self._stamps[0].time
 
-    def forward_processor(self, processor: str, time: Time) -> "Token":
+    def forward_processor(self, processor: str, time: Any) -> "Token":
         self._stamps.append(time)
         self._target.processor = processor
         return self
 
-    def forward_actor(self, actor: str, time: Time) -> "Token":
+    def forward_actor(self, actor: str, time: Any) -> "Token":
         self._stamps.append(time)
         self._target.actor = actor
         return self
 
-    def forward_target(self, target: Address, time: Time) -> "Token":
+    def forward_target(self, target: Address, time: Any) -> "Token":
         self._stamps.append(time)
         self._target = target
         return self

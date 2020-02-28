@@ -2,11 +2,11 @@ import sys
 from typing import List
 import logging
 import argparse
-from pacos3.interfaces import Address, Token, Time, ProcState, CallResult
-from pacos3.procedure import Procedure
+from pacos3.time import StepCount
+from pacos3.token import Address, Token
+from pacos3.procedure import Procedure, IProcessorState, ProcState, CallResult
 from pacos3.actor import Actor
 from pacos3.mock.sources import SingleShotSource
-from pacos3.manual_clock import ManualClock
 from pacos3.processor import Processor
 
 
@@ -21,25 +21,26 @@ class PingTriggerProc(Procedure):
         super().__init__('trigger', ProcState.OPEN)
         self._actor = actor
 
-    def call(self, token: Token, time: Time) -> CallResult:
+    def call(self, token: Token, proc: IProcessorState) -> CallResult:
         if self._actor._pings_left > 0:
-            logging.warning('time: {}, pings_left: {}'
-                            .format(time, self._actor._pings_left))
+            logging.warning('step: {}, pings_left: {}'
+                            .format(proc.step_count, 
+                                    self._actor._pings_left))
             self._actor._pings_left = self._actor._pings_left - 1
-            return CallResult(1, [self.create_token(time)])
+            return CallResult(1, [self.create_token(proc.step_count)])
         return CallResult()
     
     @staticmethod
-    def create_token(time: Time) -> Token:
-        return Token(Address(actor='pong'), None, time)
+    def create_token(step_stamp: StepCount) -> Token:
+        return Token(Address(actor='pong'), None, step_stamp)
 
 
 class PongTriggerProc(Procedure):
     def __init__(self):
         super().__init__('trigger', ProcState.OPEN)
 
-    def call(self, token: Token, time: Time) -> CallResult:
-        out_token = token.forward_target(Address(actor='ping'), time)
+    def call(self, token: Token, proc: IProcessorState) -> CallResult:
+        out_token = token.forward_target(Address(actor='ping'), proc.step_count)
         return CallResult(1, [out_token])
 
 
@@ -55,13 +56,8 @@ def run():
     processor.add_actor(ping_actor)
     processor.add_actor(PongActor())
     processor.add_source(SingleShotSource([PingTriggerProc.create_token(0)]))
-    clock = ManualClock()
-    while True:
-        step_result = processor.step(clock.time, [])
-        if step_result.interval > 0:
-            clock.advance(step_result.interval)
-        else:
-            break
+    while processor.step().step_count > 0:
+        pass
 
 
 if __name__ == "__main__":
