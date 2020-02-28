@@ -1,11 +1,11 @@
 from typing import List
-from .interfaces import Time, StepResult, ProcessorStateSnapshot, Token
+from .interfaces import TimeInterval, StepResult, ProcessorStateSnapshot, Token
 
 
 class SynchStep:
-     def __init__(self, time: Time, tokens: List[Token]):
-        self.time = time
+     def __init__(self, tokens: List[Token], paused_time: TimeInterval):
         self.tokens = tokens
+        self.paused_time = paused_time
 
 class SynchStepResult:
     def __init__(self, result: StepResult, state_snap: ProcessorStateSnapshot):
