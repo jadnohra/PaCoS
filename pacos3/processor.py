@@ -123,7 +123,7 @@ class Processor(IProcessor, IProcessorAPI):
     def time(self) -> Time:
         return self.step_count_to_time(self._step_counter)
 
-    def exit(self, exit_result = CallResult) -> CallResult:
+    def exit(self, exit_result: CallResult = CallResult()) -> CallResult:
         self._flag_exit = True
         return exit_result
 
@@ -187,8 +187,8 @@ class Processor(IProcessor, IProcessorAPI):
         if self._flag_exit:
             self._has_exited = True
 
-    def wait(self, partial_result = CallResult) -> CallResult:
-        if not self._is_proc_ready(self.get_proc(self._waiting_proc_addr)):
+    def wait(self, partial_result: CallResult = CallResult()) -> CallResult:
+        if not self._is_proc_ready(self.get_proc(self._call_stack_proc_addr)):
             logging.error('wait issued from blocked proc, will deadlock')
         self._waiting_proc_addr = self._call_stack_proc_addr
         return partial_result
@@ -228,8 +228,8 @@ class Processor(IProcessor, IProcessorAPI):
     def _unblock_waiting(self) -> bool:
         if self._waiting_proc_addr is None:
             return True
-        compat_token_idx = next([i for i, x in enumerate(self._token_pool)
-                                 if x.address == self._waiting_proc_addr], 
+        compat_token_idx = next((i for i, x in enumerate(self._token_pool)
+                                 if x.target == self._waiting_proc_addr), 
                                 -1) 
         if compat_token_idx == -1:
             return False
