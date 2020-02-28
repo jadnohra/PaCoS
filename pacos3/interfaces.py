@@ -13,29 +13,38 @@ class INamed(ABC):
         pass
 
 
-class ProcessorStateSnapshot:
-    def __init__(self, step_count, time, frequency):
+class ProcessorSnapshot:
+    def __init__(self, step_count, time, frequency, has_exited):
         self.step_count = step_count
         self.time = time
         self.frequency = frequency
+        self.has_exited = has_exited
 
 
-class IProcessorState(INamed):
+class IProcessorAPI(INamed):
     @abstractproperty
     def step_count(self) -> StepCount:
         pass
 
-    @abstractmethod
-    def get_time(self, include_paused=True) -> Time:
+    @abstractproperty
+    def time(self) -> Time:
         pass
 
     @abstractproperty
     def frequency(self) -> float:
         pass
 
-    def snap(self) -> ProcessorStateSnapshot:
-        return ProcessorStateSnapshot(self.step_count, self.get_time(),
-                                      self.frequency)
+    @abstractproperty
+    def has_exited(self) -> bool:
+        pass
+
+    @abstractmethod
+    def exit(self) -> None:
+        pass
+
+    def snap(self) -> ProcessorSnapshot:
+        return ProcessorSnapshot(self.step_count, self.time, self.frequency,
+                                 self.has_exited)
 
 
 class CallResult:
@@ -55,13 +64,13 @@ class IProcedure(INamed):
         pass
 
     @abstractmethod
-    def call(self, token: Token, processor: IProcessorState) -> CallResult:
+    def call(self, token: Token, processor: IProcessorAPI) -> CallResult:
         pass
 
 
 class ITokenSource(ABC):
     @abstractmethod
-    def generate(self, processor: IProcessorState) -> List[Token]:
+    def generate(self, processor: IProcessorAPI) -> List[Token]:
         pass
 
 
@@ -81,12 +90,12 @@ class StepResult:
         self.tokens = tokens
 
 
-class IProcessor:
+class IProcessor(IProcessorAPI):
     @abstractmethod
     def step(self, incoming_tokens: List[Token]=[], 
              paused_time: TimeInterval=0.0) -> StepResult:
         pass
 
-    @abstractmethod
-    def state(self) -> IProcessorState:
+    @abstractproperty
+    def api(self) -> IProcessorAPI:
         pass

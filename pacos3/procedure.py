@@ -1,6 +1,6 @@
 import logging
 from .interfaces import (
-            IProcedure, ProcState, Token, IProcessorState, CallResult)
+            IProcedure, ProcState, Token, IProcessorAPI, CallResult)
 
 
 class Procedure(IProcedure):
@@ -20,7 +20,7 @@ class Procedure(IProcedure):
     def state(self, state: ProcState) -> None:
         self._state = state
 
-    def call(self, token: Token, processor: IProcessorState) -> CallResult:
+    def call(self, token: Token, processor: IProcessorAPI) -> CallResult:
         return CallResult()
 
     def __str__(self) -> str:

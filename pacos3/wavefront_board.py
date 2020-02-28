@@ -60,7 +60,8 @@ class Board:
     def has_tokens(self) -> bool:
         return sum([len(x.tokens) for x in self._proc_states]) > 0
 
-    def join(self) -> None:
+    def exit(self, join=True) -> None:
         for proc_state in self._proc_states:
             proc_state.process_ipc.send_exit()
-            proc_state.process_ipc.join()
+            if join:
+                proc_state.process_ipc.join()

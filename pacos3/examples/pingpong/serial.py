@@ -4,7 +4,7 @@ import logging
 import argparse
 from pacos3.time import StepCount
 from pacos3.token import Address, Token
-from pacos3.procedure import Procedure, IProcessorState, ProcState, CallResult
+from pacos3.procedure import Procedure, IProcessorAPI, ProcState, CallResult
 from pacos3.actor import Actor
 from pacos3.mock.sources import SingleShotSource
 from pacos3.processor import Processor
@@ -21,13 +21,14 @@ class PingTriggerProc(Procedure):
         super().__init__('trigger', ProcState.OPEN)
         self._actor = actor
 
-    def call(self, token: Token, proc: IProcessorState) -> CallResult:
+    def call(self, token: Token, proc: IProcessorAPI) -> CallResult:
         if self._actor._pings_left > 0:
             logging.warning('step: {}, pings_left: {}'
                             .format(proc.step_count, 
                                     self._actor._pings_left))
             self._actor._pings_left = self._actor._pings_left - 1
             return CallResult(1, [self.create_token(proc.step_count)])
+        proc.exit()
         return CallResult()
     
     @staticmethod
@@ -39,7 +40,7 @@ class PongTriggerProc(Procedure):
     def __init__(self):
         super().__init__('trigger', ProcState.OPEN)
 
-    def call(self, token: Token, proc: IProcessorState) -> CallResult:
+    def call(self, token: Token, proc: IProcessorAPI) -> CallResult:
         out_token = token.forward_target(Address(actor='ping'), proc.step_count)
         return CallResult(1, [out_token])
 
@@ -56,8 +57,8 @@ def run():
     processor.add_actor(ping_actor)
     processor.add_actor(PongActor())
     processor.add_source(SingleShotSource([PingTriggerProc.create_token(0)]))
-    while processor.step().step_count > 0:
-        pass
+    while not processor.has_exited:
+        processor.step()
 
 
 if __name__ == "__main__":

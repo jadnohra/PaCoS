@@ -1,8 +1,8 @@
 from typing import Callable, List, Any
-from pacos3.interfaces import ITokenSource, Token, IProcessorState, StepCount
+from pacos3.interfaces import ITokenSource, Token, IProcessorAPI, StepCount
 
 
-GenFuncType = Callable[[Any, IProcessorState], List[Token]]
+GenFuncType = Callable[[Any, IProcessorAPI], List[Token]]
 
 
 class SingleShotSource(ITokenSource):
@@ -10,7 +10,7 @@ class SingleShotSource(ITokenSource):
         self._tokens = tokens
         self._shot_step = shot_step
 
-    def generate(self, processor: IProcessorState) -> List[Token]:
+    def generate(self, processor: IProcessorAPI) -> List[Token]:
         if processor.step_count >= self._shot_step:
             ret, self._tokens = self._tokens, []
             return ret
@@ -25,7 +25,7 @@ class PeriodicSource(ITokenSource):
         self._interval = step_interval
         self._next_step = first_step
 
-    def generate(self, processor: IProcessorState) -> List[Token]:
+    def generate(self, processor: IProcessorAPI) -> List[Token]:
         trigger_count = (((processor.step_count + self._interval) 
                            - self._next_step) / self._interval)
         rets = []

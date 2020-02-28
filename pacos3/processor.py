@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from typing import List, Any, Callable, Dict
 from .time import TimeInterval, Time, StepCount
 from .interfaces import (
-    Address, ITokenSource, IActor, IProcedure, IProcessorState, ProcState, 
+    Address, ITokenSource, IActor, IProcedure, IProcessorAPI, ProcState, 
     CallResult, StepResult, IProcessor, Token)
 from .ipc import SynchStep, SynchStepResult, SynchExit
 
@@ -53,13 +53,15 @@ class ProcessorIPC:
         return self._name
 
 
-class Processor(IProcessor, IProcessorState):
+class Processor(IProcessor, IProcessorAPI):
     def __init__(self, config: ProcessorConfig = ProcessorConfig(), 
                  log_pid: bool = False):
         self._name = config.name
         self._step_counter = 0
         self._frequency = config.frequency
-        self._paused_time = 0
+        self._paused_time = 0.0
+        self._flag_exit = False
+        self._has_exited = False
         self._actors = []
         self._sources = []
         self._name_actor_dict = {}
@@ -97,7 +99,7 @@ class Processor(IProcessor, IProcessorState):
                 logging.info('stepping')
                 step_result = processor.step(synch_msg.tokens, 
                                              synch_msg.paused_time)
-                conn.send(SynchStepResult(step_result, processor.state.snap()))
+                conn.send(SynchStepResult(step_result, processor.api.snap()))
             else:
                 break
 
@@ -106,7 +108,7 @@ class Processor(IProcessor, IProcessorState):
         return self._name
 
     @property
-    def state(self) -> IProcessorState:
+    def api(self) -> IProcessorAPI:
         return self
     
     @property
@@ -117,8 +119,16 @@ class Processor(IProcessor, IProcessorState):
     def frequency(self) -> float:
         return self._frequency
 
-    def get_time(self, including_paused=False) -> TimeInterval:
-        pass
+    @property
+    def time(self) -> Time:
+        return self._paused_time + (self._step_counter / self._frequency)
+
+    def exit(self) -> None:
+        self._flag_exit = True
+
+    @property
+    def has_exited(self) -> bool:
+        return self._has_exited
 
     def add_actor(self, actor: IActor) -> None:
         self._actors.append(actor)
@@ -159,7 +169,7 @@ class Processor(IProcessor, IProcessorState):
         if len(self._token_queue) == 0:
             return 0
         token = self._token_queue.pop()
-        return self.get_token_proc(token).call(token, self)
+        return self.get_token_proc(token).call(token, self.api)
 
     def _is_token_proc_ready(self, token: Token):
         return self.get_token_proc(token).state != ProcState.CLOSED
@@ -186,5 +196,7 @@ class Processor(IProcessor, IProcessorState):
             self._step_counter = self._step_counter + proc_result.step_count
             self._put_tokens(proc_result.calls)
             self._enqueue_ready_tokens()
+        if self._flag_exit:
+            self._has_exited = True
         tokens, self._remote_tokens = self._remote_tokens, []
         return StepResult(self._step_counter - pre_step_count, tokens)
