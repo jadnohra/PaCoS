@@ -22,17 +22,23 @@ class ProcessorSnapshot:
         self.has_exited = has_exited
 
 
+class CallResult:
+    def __init__(self, step_count: StepCount = 0, calls: List[Token] = []):
+        self.step_count = step_count
+        self.calls = calls
+
+
 class IProcessorAPI(INamed):
     @abstractproperty
     def time(self) -> Time:
         pass
 
     @abstractmethod
-    def wait(self) -> None:
+    def wait(self, partial_result: CallResult = CallResult()) -> CallResult:
         pass
 
     @abstractmethod
-    def exit(self) -> None:
+    def exit(self, exit_result: CallResult = CallResult()) -> CallResult:
         pass
 
     @abstractproperty
@@ -42,13 +48,6 @@ class IProcessorAPI(INamed):
     @abstractproperty
     def frequency(self) -> float:
         pass
-
-
-class CallResult:
-    def __init__(self, step_count: StepCount = 0, calls: List[Token] = []):
-        self.step_count = step_count
-        self.calls = calls
-
 
 class ProcState(Enum):
     CLOSED = auto()

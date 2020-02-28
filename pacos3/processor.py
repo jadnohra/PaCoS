@@ -123,8 +123,9 @@ class Processor(IProcessor, IProcessorAPI):
     def time(self) -> Time:
         return self.step_count_to_time(self._step_counter)
 
-    def exit(self) -> None:
+    def exit(self, exit_result = CallResult) -> CallResult:
         self._flag_exit = True
+        return exit_result
 
     @property
     def has_exited(self) -> bool:
@@ -186,10 +187,11 @@ class Processor(IProcessor, IProcessorAPI):
         if self._flag_exit:
             self._has_exited = True
 
-    def wait(self) -> None:
+    def wait(self, partial_result = CallResult) -> CallResult:
         if not self._is_proc_ready(self.get_proc(self._waiting_proc_addr)):
             logging.error('wait issued from blocked proc, will deadlock')
         self._waiting_proc_addr = self._call_stack_proc_addr
+        return partial_result
 
     def do_call(self, address: Address, token: Token) -> None:
         self._call_stack_proc_addr = copy.copy(address)
