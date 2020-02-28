@@ -33,7 +33,7 @@ class Board:
         logging.info('{}: send take_step {}'.format(os.getpid(), proc_indices))
         for i in proc_indices:
             proc_state = self._proc_states[i]
-            proc_state.process_ipc.send_step(proc_state.tokens, 0)
+            proc_state.process_ipc.send_step(proc_state.tokens)
             proc_state.tokens = []
         for i in proc_indices:
             proc_state = self._proc_states[i]

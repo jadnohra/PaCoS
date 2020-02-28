@@ -92,8 +92,7 @@ class StepResult:
 
 class IProcessor(IProcessorAPI):
     @abstractmethod
-    def step(self, incoming_tokens: List[Token]=[], 
-             paused_time: TimeInterval=0.0) -> StepResult:
+    def step(self, board_tokens: List[Token]=[]) -> StepResult:
         pass
 
     @abstractproperty

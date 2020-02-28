@@ -39,8 +39,8 @@ class ProcessorIPC:
     def join(self) -> None:
         self._process.join()
     
-    def send_step(self, paused_time: TimeInterval, tokens: List[Token]) -> None:
-        self._conn.send(SynchStep(paused_time, tokens)) 
+    def send_step(self, board_tokens: List[Token]) -> None:
+        self._conn.send(SynchStep(board_tokens)) 
         
     def send_exit(self) -> None:
         self._conn.send(SynchExit())
@@ -97,8 +97,7 @@ class Processor(IProcessor, IProcessorAPI):
             synch_msg = conn.recv()
             if isinstance(synch_msg, SynchStep):
                 logging.info('stepping')
-                step_result = processor.step(synch_msg.tokens, 
-                                             synch_msg.paused_time)
+                step_result = processor.step(synch_msg.board_tokens)
                 conn.send(SynchStepResult(step_result, processor.api.snap()))
             else:
                 break
@@ -185,11 +184,16 @@ class Processor(IProcessor, IProcessorAPI):
         for i in sorted(ready_indices, reverse=True):
             self._token_pool.pop(i)
 
-    def step(self, incoming_tokens: List[Token]=[], 
-             paused_time: TimeInterval=0.0) -> StepResult:
-        self._put_tokens(incoming_tokens)
+    def step(self, board_tokens: List[Token]=[]) -> StepResult:
+
         self._put_tokens(self._generate_tokens())
         self._enqueue_ready_tokens()
+        capture_paused_time = (len(self._token_queue) == 0)
+        self._put_tokens(board_tokens)
+        self._enqueue_ready_tokens()
+        if capture_paused_time and len(self._token_queue) > 0:
+            time_diff = self._token_queue[0].last_time - self.api.time
+            self._paused_time = self._paused_time + max(0, time_diff)
         pre_step_count = self._step_counter
         if len(self._token_queue) > 0:
             proc_result = self._pop_queue_token()
