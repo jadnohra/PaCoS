@@ -28,7 +28,10 @@ class PingTriggerProc(Procedure):
                             .format(repr_time(proc.time), 
                             self._actor._pings_left))
             self._actor._pings_left = self._actor._pings_left - 1
-            return CallResult(1, [self.create_token()])
+            # TODO: no permanent sources, exit when no work
+            # period sources reinsert themselves when triggerd
+            # no sources, just triggers
+            return proc.wait(CallResult(1, [self.create_token()]))
         return proc.exit()
     
     @staticmethod
