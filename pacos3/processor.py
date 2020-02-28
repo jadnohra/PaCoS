@@ -121,7 +121,7 @@ class Processor(IProcessor, IProcessorAPI):
 
     @property
     def time(self) -> Time:
-        return self.step_count_to_time(self._step_counter)
+        return self.steps_to_interval(self._step_counter)
 
     def exit(self, exit_result: CallResult = CallResult()) -> CallResult:
         self._flag_exit = True
