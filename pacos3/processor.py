@@ -97,7 +97,7 @@ class Processor(IProcessor, IProcessorState):
                 logging.info('stepping')
                 step_result = processor.step(synch_msg.time, 
                                              synch_msg.tokens)
-                conn.send(SynchStepResult(step_result))
+                conn.send(SynchStepResult(step_result, processor.state.snap()))
             else:
                 break
 

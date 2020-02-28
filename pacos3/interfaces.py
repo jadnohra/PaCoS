@@ -13,18 +13,34 @@ class INamed(ABC):
         pass
 
 
+class ProcessorStateSnapshot:
+    def __init__(self, step_count, time, time_incl_paused, frequency):
+        self.step_count = step_count
+        self.time = time
+        self.time_incl_paused = time_incl_paused
+        self.frequency = frequency
+
+
 class IProcessorState(INamed):
     @abstractproperty
     def step_count(self) -> StepCount:
+        pass
+
+    @abstractmethod
+    def get_time(self, include_paused=False) -> Time:
         pass
 
     @abstractproperty
     def frequency(self) -> float:
         pass
 
-    @abstractmethod
-    def get_time(self, including_paused=False) -> TimeInterval:
-        pass
+    @property
+    def stamp_time(self) -> Time:
+        return self.get_time(True)
+
+    def snap(self) -> ProcessorStateSnapshot:
+        return ProcessorStateSnapshot(self.step_count, self.get_time(),
+                                      self.get_time(True), self.frequency)
 
 
 class CallResult:

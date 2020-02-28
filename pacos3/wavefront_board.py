@@ -12,6 +12,7 @@ class Board:
     class ProcessState:
         def __init__(self, config: ProcessorConfig, mp_context: Any):
             self.process_ipc = Processor.mp_create(config, mp_context, False)
+            self.paused_time = 0
             self.wave_time = -1
             self.tokens = []
 
@@ -30,19 +31,19 @@ class Board:
                                         token.forward_processor(None, time))
 
     def _step_parall(self, proc_indices: List[int]) -> List[TimeInterval]:
-        intervals = []
-        synch_clock = ManualClock(self._wave_time)
+        step_counts = []
+        #synch_clock = ManualClock(self._wave_time)
         logging.info('{}: send take_step {}'.format(os.getpid(), proc_indices))
         for i in proc_indices:
             proc_state = self._proc_states[i]
-            proc_state.process_ipc.send_step(synch_clock.time, 
+            proc_state.process_ipc.send_step(proc_state.paused_time, 
                                              proc_state.tokens)
             proc_state.tokens = []
         for i in proc_indices:
             proc_state = self._proc_states[i]
-            step_result = proc_state.process_ipc.recv_step_result().result
-            intervals.append(step_result.interval)
-            self._forward_tokens(step_result.tokens, 
+            step_msg = proc_state.process_ipc.recv_step_result()
+            step_counts.append(step_msg.result.step_count)
+            self._forward_tokens(step_msg.result.tokens, 
                                  synch_clock.time + step_result.interval)
         for i, interval in enumerate(intervals):
             proc_state = self._proc_states[proc_indices[i]]

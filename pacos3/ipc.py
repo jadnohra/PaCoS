@@ -1,5 +1,5 @@
 from typing import List
-from .interfaces import Time, StepResult, Token
+from .interfaces import Time, StepResult, ProcessorStateSnapshot, Token
 
 
 class SynchStep:
@@ -8,8 +8,9 @@ class SynchStep:
         self.tokens = tokens
 
 class SynchStepResult:
-    def __init__(self, result: StepResult):
+    def __init__(self, result: StepResult, state_snap: ProcessorStateSnapshot):
         self.result = result
+        self.state_snap = state_snap
 
 class SynchExit:
     def __init__(self):
