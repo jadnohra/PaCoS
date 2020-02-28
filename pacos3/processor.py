@@ -67,7 +67,7 @@ class Processor(IProcessor, IProcessorAPI):
         self._token_pool = []
         self._token_queue = []
         self._board_tokens = []
-        self._waiting_proc_address = None
+        self._waiting_proc_addr = None
         self._token_queue_rand = config.call_queue_rand
         self._token_source_rand = config.call_source_rand
         if config.log_level:
@@ -76,7 +76,7 @@ class Processor(IProcessor, IProcessorAPI):
             logging.basicConfig(format=format,
                                 level=logging.getLevelName(
                                         config.log_level.upper()))
-        self._init_calls = config.main_func(self)
+        self._init_calls = config.main_func(self) if config.main_func else []
 
 
     @staticmethod
@@ -160,7 +160,7 @@ class Processor(IProcessor, IProcessorAPI):
         return self._name_actor_dict.get(actor_name, None)
 
     def get_proc(self, address: Address) -> IProcedure:
-        return self.get_actor(address.actor_name).get_procedure(address.proc)
+        return self.get_actor(address.actor).get_procedure(address.proc)
 
     def _stamp_tokens(self, tokens: List[Token], time_diff: TimeInterval = 0
                       ) -> List[Token]:
@@ -187,12 +187,12 @@ class Processor(IProcessor, IProcessorAPI):
             self._has_exited = True
 
     def wait(self) -> None:
-        if not self._is_proc_ready(self._waiting_proc_address):
+        if not self._is_proc_ready(self.get_proc(self._waiting_proc_addr)):
             logging.error('wait issued from blocked proc, will deadlock')
-        self._waiting_proc_address = self._call_stack_proc_address
+        self._waiting_proc_addr = self._call_stack_proc_addr
 
     def do_call(self, address: Address, token: Token) -> None:
-        self._call_stack_proc_address = copy.copy(address)
+        self._call_stack_proc_addr = copy.copy(address)
         result = self.get_proc(address).call(token, self.api)
         self._process_call_result(result)
 
@@ -206,11 +206,11 @@ class Processor(IProcessor, IProcessorAPI):
             address = self._init_calls.pop()
             self.do_call(address, None)
 
-    def _is_proc_ready(self, proc: IProcedure):
+    def _is_proc_ready(self, proc: IProcedure) -> bool:
         return proc.state != ProcState.CLOSED
 
-    def _is_token_proc_ready(self, token: Token):
-        return self._is_proc_ready(token.target)
+    def _is_token_proc_ready(self, token: Token) -> bool:
+        return self._is_proc_ready(self.get_proc(token.target))
 
     def _enqueue_ready_tokens(self) -> None:
         ready_indices = [i for i, token in enumerate(self._token_pool)
@@ -224,15 +224,15 @@ class Processor(IProcessor, IProcessorAPI):
             self._token_pool.pop(i)
 
     def _unblock_waiting(self) -> bool:
-        if self._waiting_proc_address is None:
+        if self._waiting_proc_addr is None:
             return True
         compat_token_idx = next([i for i, x in enumerate(self._token_pool)
-                                 if x.address == self._waiting_proc_address], 
+                                 if x.address == self._waiting_proc_addr], 
                                 -1) 
         if compat_token_idx == -1:
             return False
         self._token_queue.append(self._token_pool.pop(compat_token_idx))
-        self._waiting_proc_address = None
+        self._waiting_proc_addr = None
         return True
 
     def step(self, board_tokens: List[Token]=[]) -> None:
