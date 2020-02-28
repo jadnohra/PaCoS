@@ -1,3 +1,4 @@
+import copy
 from typing import List, Any
 from .time import Time
 from .address import Address
@@ -8,6 +9,7 @@ class Token:
         self._target = target
         self._payload = payload
         self._stamps = []
+        self._stamp_addresses = []
     
     @property
     def payload(self) -> Any:
@@ -31,22 +33,17 @@ class Token:
 
     def stamp(self, time: Time) -> None:
         self._stamps.append(time)
+        self._stamp_addresses.append(copy.copy(self._target))
 
-    def _get_stamp_time(self, time: Time = None) -> Time:
-        return time if time is not None else self.last_time
-
-    def forward_processor(self, processor: str, time: Time = None) -> "Token":
-        self._stamps.append(self._get_stamp_time(time))
+    def forward_processor(self, processor: str) -> "Token":
         self._target.processor = processor
         return self
 
-    def forward_actor(self, actor: str, time: Time = None) -> "Token":
-        self._stamps.append(self._get_stamp_time(time))
+    def forward_actor(self, actor: str) -> "Token":
         self._target.actor = actor
         return self
 
-    def forward_target(self, target: Address, time: Time = None) -> "Token":
-        self._stamps.append(self._get_stamp_time(time))
+    def forward_target(self, target: Address) -> "Token":
         self._target = target
         return self
 

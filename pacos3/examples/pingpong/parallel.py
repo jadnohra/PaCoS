@@ -27,13 +27,13 @@ class PingTriggerProc(Procedure):
             logging.warning('time: {}, pings_left: {}'
                             .format(proc.time, self._actor._pings_left))
             self._actor._pings_left = self._actor._pings_left - 1
-            return CallResult(1, [self.create_token(proc.time)])
+            return CallResult(1, [self.create_token()])
         proc.exit()
         return CallResult()
     
     @staticmethod
-    def create_token(time: Time) -> Token:
-        return Token(Address(processor='B', actor='pong'), None, time)
+    def create_token() -> Token:
+        return Token(Address(processor='B', actor='pong'), None)
 
 
 class PongTriggerProc(Procedure):
@@ -42,9 +42,7 @@ class PongTriggerProc(Procedure):
 
     def call(self, token: Token, proc: IProcessorAPI) -> CallResult:
         logging.warning('time: {}, pong'.format(proc.time))
-        out_token = token.forward_target(
-                                    Address(processor='A', actor='ping'), 
-                                    proc.time)
+        out_token = token.forward_target(Address(processor='A', actor='ping'))
         return CallResult(1, [out_token])
 
 
@@ -55,7 +53,7 @@ class PongActor(Actor):
 
 def ping_main(processor: Processor) -> None:
     processor.add_actor(PingActor(3))
-    processor.add_source(SingleShotSource([PingTriggerProc.create_token(0)]))
+    processor.add_source(SingleShotSource([PingTriggerProc.create_token()]))
 
 
 def pong_main(processor: Processor) -> None:
