@@ -45,7 +45,7 @@ class Board:
         for i in proc_indices:
             proc_state = self._proc_states[i]
             step_msg = proc_state.process_ipc.recv_step_result()
-            self._forward_tokens(step_msg.result.tokens)
+            self._forward_tokens(step_msg.board_tokens)
             proc_state.snap = step_msg.state_snap
 
     def _barrier_time(self) -> Time:

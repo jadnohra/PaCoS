@@ -7,13 +7,13 @@ from typing import List, Any, Callable, Dict
 from .time import TimeInterval, Time, StepCount
 from .interfaces import (
     Address, ITokenSource, IActor, IProcedure, IProcessorAPI, ProcState, 
-    CallResult, StepResult, IProcessor, Token)
+    CallResult, IProcessor, Token)
 from .ipc import SynchStep, SynchStepResult, SynchExit
 
 
 class ProcessorConfig:
     def __init__(self, *,
-                main: Callable[['Processor'], None] = None,
+                main: Callable[['Processor'], List[Address]] = None,
                 name: str = None,
                 frequency: float = 1.0*(10**9),
                 call_queue_rand: Random = None, 
@@ -59,7 +59,6 @@ class Processor(IProcessor, IProcessorAPI):
         self._name = config.name
         self._step_counter = 0
         self._frequency = config.frequency
-        self._paused_time = 0.0
         self._flag_exit = False
         self._has_exited = False
         self._actors = []
@@ -67,7 +66,8 @@ class Processor(IProcessor, IProcessorAPI):
         self._name_actor_dict = {}
         self._token_pool = []
         self._token_queue = []
-        self._remote_tokens = []
+        self._board_tokens = []
+        self._waiting_proc_address = None
         self._token_queue_rand = config.call_queue_rand
         self._token_source_rand = config.call_source_rand
         if config.log_level:
@@ -76,8 +76,8 @@ class Processor(IProcessor, IProcessorAPI):
             logging.basicConfig(format=format,
                                 level=logging.getLevelName(
                                         config.log_level.upper()))
-        if config.main_func:
-            config.main_func(self)
+        self._init_calls = config.main_func(self)
+
 
     @staticmethod
     def mp_create(config: ProcessorConfig, mp_context: Any, 
@@ -97,8 +97,9 @@ class Processor(IProcessor, IProcessorAPI):
             synch_msg = conn.recv()
             if isinstance(synch_msg, SynchStep):
                 logging.info('stepping')
-                step_result = processor.step(synch_msg.board_tokens)
-                conn.send(SynchStepResult(step_result, processor.api.snap()))
+                processor.step(synch_msg.board_tokens)
+                conn.send(SynchStepResult(processor._pop_board_tokens(), 
+                                          processor.snap()))
             else:
                 break
 
@@ -120,7 +121,7 @@ class Processor(IProcessor, IProcessorAPI):
 
     @property
     def time(self) -> Time:
-        return self._paused_time + self.step_count_to_time(self._step_counter)
+        return self.step_count_to_time(self._step_counter)
 
     def exit(self) -> None:
         self._flag_exit = True
@@ -139,12 +140,16 @@ class Processor(IProcessor, IProcessorAPI):
     def _is_local_address(self, address: Address):
         return address.processor is None
 
+    def _pop_board_tokens(self) -> List[Token]:
+        ret, self._board_tokens = self._board_tokens, []
+        return ret
+
     def _put_tokens(self, tokens: List[Token]) -> None:
         for token in tokens:
             if self._is_local_address(token.target):
                 self._token_pool.append(token)
             else:
-                self._remote_tokens.append(token)
+                self._board_tokens.append(token)
 
     def add_source(self, source: ITokenSource) -> None:
         self._sources.append(source)
@@ -154,10 +159,8 @@ class Processor(IProcessor, IProcessorAPI):
             return self._actors[0]
         return self._name_actor_dict.get(actor_name, None)
 
-    def get_token_proc(self, token: Token) -> IProcedure:
-        actor_name = (token.target.actor if token.target.actor 
-                      else token.source.actor)
-        return self.get_actor(actor_name).get_procedure(token.target.proc)
+    def get_proc(self, address: Address) -> IProcedure:
+        return self.get_actor(address.actor_name).get_procedure(address.proc)
 
     def _stamp_tokens(self, tokens: List[Token], time_diff: TimeInterval = 0
                       ) -> List[Token]:
@@ -174,17 +177,40 @@ class Processor(IProcessor, IProcessorAPI):
         tokens = sum([source.generate(self) for source in sources], [])
         return self._stamp_tokens(tokens)
 
-    def _pop_queue_token(self) -> CallResult:
-        if len(self._token_queue) == 0:
-            return 0
-        token = self._token_queue.pop()
-        result = self.get_token_proc(token).call(token, self.api)
+    def _process_call_result(self, result: CallResult) -> None:
         self._stamp_tokens(result.calls, 
                            self.step_count_to_time(result.step_count))
-        return result
+        self._step_counter = self._step_counter + result.step_count
+        self._put_tokens(result.calls)
+        self._enqueue_ready_tokens()
+        if self._flag_exit:
+            self._has_exited = True
+
+    def wait(self) -> None:
+        if not self._is_proc_ready(self._waiting_proc_address):
+            logging.error('wait issued from blocked proc, will deadlock')
+        self._waiting_proc_address = self._call_stack_proc_address
+
+    def do_call(self, address: Address, token: Token) -> None:
+        self._call_stack_proc_address = copy.copy(address)
+        result = self.get_proc(address).call(token, self.api)
+        self._process_call_result(result)
+
+    def _pop_call_queue_token(self) -> None:
+        if len(self._token_queue) != 0:
+            token = self._token_queue.pop()
+            self.do_call(token.target, token)
+
+    def _pop_call_init(self) -> None:
+        if len(self._init_calls) != 0:
+            address = self._init_calls.pop()
+            self.do_call(address, None)
+
+    def _is_proc_ready(self, proc: IProcedure):
+        return proc.state != ProcState.CLOSED
 
     def _is_token_proc_ready(self, token: Token):
-        return self.get_token_proc(token).state != ProcState.CLOSED
+        return self._is_proc_ready(token.target)
 
     def _enqueue_ready_tokens(self) -> None:
         ready_indices = [i for i, token in enumerate(self._token_pool)
@@ -197,25 +223,25 @@ class Processor(IProcessor, IProcessorAPI):
         for i in sorted(ready_indices, reverse=True):
             self._token_pool.pop(i)
 
-    def step(self, board_tokens: List[Token]=[]) -> StepResult:
+    def _unblock_waiting(self) -> bool:
+        if self._waiting_proc_address is None:
+            return True
+        compat_token_idx = next([i for i, x in enumerate(self._token_pool)
+                                 if x.address == self._waiting_proc_address], 
+                                -1) 
+        if compat_token_idx == -1:
+            return False
+        self._token_queue.append(self._token_pool.pop(compat_token_idx))
+        self._waiting_proc_address = None
+        return True
 
+    def step(self, board_tokens: List[Token]=[]) -> None:
+        if len(self._init_calls) > 0:
+            self._pop_call_init()
+            return
+        self._put_tokens(board_tokens)
+        if not self._unblock_waiting():
+            return
         self._put_tokens(self._generate_tokens())
         self._enqueue_ready_tokens()
-        capture_paused_time = (len(self._token_queue) == 0)
-        self._put_tokens(board_tokens)
-        self._enqueue_ready_tokens()
-        if capture_paused_time and len(self._token_queue) > 0:
-            time_diff = self._token_queue[0].last_time - self.api.time
-            if time_diff > 0:
-                logging.debug('waited {}'.format(time_diff))
-            self._paused_time = self._paused_time + max(0, time_diff)
-        pre_step_count = self._step_counter
-        if len(self._token_queue) > 0:
-            proc_result = self._pop_queue_token()
-            self._step_counter = self._step_counter + proc_result.step_count
-            self._put_tokens(proc_result.calls)
-            self._enqueue_ready_tokens()
-        if self._flag_exit:
-            self._has_exited = True
-        tokens, self._remote_tokens = self._remote_tokens, []
-        return StepResult(self._step_counter - pre_step_count, tokens)
+        self._pop_call_queue_token()

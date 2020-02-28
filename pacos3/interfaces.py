@@ -24,29 +24,24 @@ class ProcessorSnapshot:
 
 class IProcessorAPI(INamed):
     @abstractproperty
-    def step_count(self) -> StepCount:
-        pass
-
-    @abstractproperty
     def time(self) -> Time:
         pass
 
-    @abstractproperty
-    def frequency(self) -> float:
-        pass
-
-    @abstractproperty
-    def has_exited(self) -> bool:
+    @abstractmethod
+    def wait(self) -> None:
         pass
 
     @abstractmethod
     def exit(self) -> None:
         pass
 
-    def snap(self) -> ProcessorSnapshot:
-        return ProcessorSnapshot(step_count=self.step_count, time=self.time, 
-                                 frequency=self.frequency, 
-                                 has_exited=self.has_exited)
+    @abstractproperty
+    def step_count(self) -> StepCount:
+        pass
+
+    @abstractproperty
+    def frequency(self) -> float:
+        pass
 
 
 class CallResult:
@@ -87,17 +82,21 @@ class IActor(INamed):
         pass
 
 
-class StepResult:
-    def __init__(self, step_count: StepCount, tokens: List[Token]):
-        self.step_count = step_count
-        self.tokens = tokens
-
-
 class IProcessor(IProcessorAPI):
     @abstractmethod
-    def step(self, board_tokens: List[Token]=[]) -> StepResult:
+    def step(self, board_tokens: List[Token]=[]) -> None:
         pass
 
     @abstractproperty
     def api(self) -> IProcessorAPI:
         pass
+
+    @abstractproperty
+    def has_exited(self) -> bool:
+        pass
+
+    def snap(self) -> ProcessorSnapshot:
+        return ProcessorSnapshot(step_count=self.api.step_count, 
+                                 time=self.api.time, 
+                                 frequency=self.api.frequency, 
+                                 has_exited=self.has_exited)

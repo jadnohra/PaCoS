@@ -1,5 +1,5 @@
 from typing import List
-from .interfaces import TimeInterval, StepResult, ProcessorSnapshot, Token
+from .interfaces import TimeInterval, ProcessorSnapshot, Token
 
 
 class SynchStep:
@@ -7,8 +7,9 @@ class SynchStep:
         self.board_tokens = board_tokens
 
 class SynchStepResult:
-    def __init__(self, result: StepResult, state_snap: ProcessorSnapshot):
-        self.result = result
+    def __init__(self, board_tokens: List[Token], 
+                 state_snap: ProcessorSnapshot):
+        self.board_tokens = board_tokens
         self.state_snap = state_snap
 
 class SynchExit:
