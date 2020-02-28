@@ -4,7 +4,7 @@ from .interfaces import Time, StepResult, Token
 
 class SynchStep:
      def __init__(self, time: Time, tokens: List[Token]):
-        self.clock = clock
+        self.time = time
         self.tokens = tokens
 
 class SynchStepResult:

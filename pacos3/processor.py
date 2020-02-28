@@ -12,12 +12,12 @@ from .ipc import SynchStep, SynchStepResult, SynchExit
 
 class ProcessorConfig:
     def __init__(self, *,
-                main_func: Callable[['Processor'], None] = None,
+                main: Callable[['Processor'], None] = None,
                 name: str = None,
                 call_queue_rand: Random = None, 
                 call_source_rand: Random = None,
                 log_level: str = 'WARNING'):
-        self.main_func = main_func
+        self.main_func = main
         self.name = name
         self.call_queue_rand = call_queue_rand
         self.call_source_rand = call_source_rand
@@ -72,15 +72,15 @@ class Processor(IProcessor):
             config.main_func(self)
 
     @staticmethod
-    def mp_create(self, config: ProcessorConfig, mp_context: Any, 
+    def mp_create(config: ProcessorConfig, mp_context: Any, 
                   create_paused = False) -> multiprocessing.Process:
         master_conn, child_conn = mp_context.Pipe()
         proc_args = {'config': config, 'conn': child_conn}
-        process = mp_context.Process(target=self._mp_process_func, 
+        process = mp_context.Process(target=Processor._mp_process_func, 
                                      kwargs=proc_args)
         if not create_paused:
             process.start()
-        ProcessorIPC(config.name, process, master_conn)
+        return ProcessorIPC(config.name, process, master_conn)
 
     @staticmethod
     def _mp_process_func(config: ProcessorConfig, conn: Any):

@@ -3,7 +3,7 @@ import copy
 import logging
 import multiprocessing
 from typing import List, Tuple, Callable, Dict, Any
-from .interfaces import TimeInterval, Time, IClock, Token, CallMode
+from .interfaces import TimeInterval, Time, IClock, Token
 from .manual_clock import ManualClock
 from .processor import ProcessorConfig, Processor, ProcessorIPC
 
@@ -17,8 +17,8 @@ class Board:
 
     def __init__(self, processor_configs = List[ProcessorConfig]):
         mp_context = multiprocessing.get_context('spawn')
-        self._proc_states = [self.ProcessState(mp_context,x) 
-                             for x in processor_configs]
+        self._proc_states = [self.ProcessState(config, mp_context) 
+                             for config in processor_configs]
         self._name_idx_dict = {processor_configs[i].name: i 
                                for i in range(len(processor_configs))}
         self._wave_time = 1
@@ -35,7 +35,8 @@ class Board:
         logging.info('{}: send take_step {}'.format(os.getpid(), proc_indices))
         for i in proc_indices:
             proc_state = self._proc_states[i]
-            proc_state.process_ipc.send_step(synch_clock, proc_state.tokens)
+            proc_state.process_ipc.send_step(synch_clock.time, 
+                                             proc_state.tokens)
             proc_state.tokens = []
         for i in proc_indices:
             proc_state = self._proc_states[i]
