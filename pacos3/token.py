@@ -1,6 +1,6 @@
 import copy
 from typing import List, Any
-from .time import Time
+from .time import Time, repr_time
 from .address import Address
 
 
@@ -50,4 +50,4 @@ class Token:
     def __str__(self) -> str:
         return '{} -> {} @ [{}]'.format(
                             self._payload, self._target,
-                            ', '.join([str(x) for x in self._stamps]))
+                            ', '.join([repr_time(x) for x in self._stamps]))

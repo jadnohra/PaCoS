@@ -2,7 +2,8 @@ import sys
 from typing import List
 import logging
 import argparse
-from pacos3.interfaces import Address, Token, ProcState, CallResult, Time
+from pacos3.time import Time, repr_time
+from pacos3.interfaces import Address, Token, ProcState, CallResult
 from pacos3.procedure import Procedure
 from pacos3.actor import Actor
 from pacos3.mock.sources import SingleShotSource
@@ -25,7 +26,8 @@ class PingTriggerProc(Procedure):
     def call(self, token: Token, proc: IProcessorAPI) -> CallResult:
         if self._actor._pings_left > 0:
             logging.warning('time: {}, pings_left: {}'
-                            .format(proc.time, self._actor._pings_left))
+                            .format(repr_time(proc.time), 
+                            self._actor._pings_left))
             self._actor._pings_left = self._actor._pings_left - 1
             return CallResult(1, [self.create_token()])
         proc.exit()
@@ -41,7 +43,7 @@ class PongTriggerProc(Procedure):
         super().__init__('trigger', ProcState.OPEN)
 
     def call(self, token: Token, proc: IProcessorAPI) -> CallResult:
-        logging.warning('time: {}, pong'.format(proc.time))
+        logging.warning('time: {}, pong'.format(repr_time(proc.time)))
         out_token = token.forward_target(Address(processor='A', actor='ping'))
         return CallResult(1, [out_token])
 
