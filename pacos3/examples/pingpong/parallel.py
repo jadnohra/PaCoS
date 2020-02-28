@@ -8,7 +8,7 @@ from pacos3.procedure import Procedure
 from pacos3.actor import Actor
 from pacos3.mock.sources import SingleShotSource
 from pacos3.processor import Processor, ProcessorConfig, IProcessorAPI
-from pacos3.wavefront_board import Board
+from pacos3.board import Board
 
 
 

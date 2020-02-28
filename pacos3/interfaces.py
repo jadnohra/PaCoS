@@ -14,7 +14,8 @@ class INamed(ABC):
 
 
 class ProcessorSnapshot:
-    def __init__(self, step_count, time, frequency, has_exited):
+    def __init__(self, *,step_count: StepCount = 0, time: Time = 0.0, 
+                 frequency: Time = 0.0, has_exited: bool = False):
         self.step_count = step_count
         self.time = time
         self.frequency = frequency
@@ -43,8 +44,9 @@ class IProcessorAPI(INamed):
         pass
 
     def snap(self) -> ProcessorSnapshot:
-        return ProcessorSnapshot(self.step_count, self.time, self.frequency,
-                                 self.has_exited)
+        return ProcessorSnapshot(step_count=self.step_count, time=self.time, 
+                                 frequency=self.frequency, 
+                                 has_exited=self.has_exited)
 
 
 class CallResult:
@@ -56,6 +58,7 @@ class CallResult:
 class ProcState(Enum):
     CLOSED = auto()
     OPEN = auto()
+
 
 
 class IProcedure(INamed):
