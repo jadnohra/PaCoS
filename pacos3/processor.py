@@ -96,7 +96,7 @@ class Processor(IProcessor, IProcessorAPI):
         while True:
             synch_msg = conn.recv()
             if isinstance(synch_msg, SynchStep):
-                logging.info('stepping')
+                logging.debug('stepping')
                 processor.step(synch_msg.board_tokens)
                 conn.send(SynchStepResult(processor._pop_board_tokens(), 
                                           processor.snap()))
@@ -229,7 +229,7 @@ class Processor(IProcessor, IProcessorAPI):
         if self._waiting_proc_addr is None:
             return True
         compat_token_idx = next((i for i, x in enumerate(self._token_pool)
-                                 if x.target == self._waiting_proc_addr), 
+                                 if x.target.equals(self._waiting_proc_addr)), 
                                 -1) 
         if compat_token_idx == -1:
             return False

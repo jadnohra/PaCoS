@@ -6,7 +6,6 @@ from pacos3.time import Time, repr_time
 from pacos3.interfaces import Address, Token, ProcState, CallResult
 from pacos3.procedure import Procedure
 from pacos3.actor import Actor
-from pacos3.mock.sources import SingleShotSource
 from pacos3.processor import Processor, ProcessorConfig, IProcessorAPI
 from pacos3.board import Board
 
@@ -56,7 +55,6 @@ class PongActor(Actor):
 
 def ping_main(processor: Processor) -> List[Address]:
     processor.add_actor(PingActor(3))
-    processor.add_source(SingleShotSource([PingTriggerProc.create_token()]))
     return [Address(actor='ping')]
 
 
@@ -70,7 +68,7 @@ def run(log_level: str = 'WARNING'):
     board = Board([ProcessorConfig(name='A', main=ping_main, 
                                    log_level=log_level), 
                    ProcessorConfig(name='B', main=pong_main, 
-                                   log_level=log_level)])
+                                   log_level='INFO')])
     while not board.any_exited:
         board.step()
     board.exit()
