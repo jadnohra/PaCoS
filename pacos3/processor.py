@@ -206,6 +206,8 @@ class Processor(IProcessor, IProcessorAPI):
         self._enqueue_ready_tokens()
         if capture_paused_time and len(self._token_queue) > 0:
             time_diff = self._token_queue[0].last_time - self.api.time
+            if time_diff > 0:
+                logging.debug('waited {}'.format(time_diff))
             self._paused_time = self._paused_time + max(0, time_diff)
         pre_step_count = self._step_counter
         if len(self._token_queue) > 0:
