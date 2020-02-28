@@ -131,8 +131,11 @@ class Processor(IProcessor, IProcessorAPI):
     def has_exited(self) -> bool:
         return self._has_exited
 
-    def step_count_to_time(self, step_count: StepCount) -> Time:
+    def steps_to_interval(self, step_count: StepCount) -> TimeInterval:
         return step_count / self._frequency
+
+    def interval_to_steps(self, time_interval: TimeInterval) -> Time:
+        return time_interval * self._frequency
 
     def add_actor(self, actor: IActor) -> None:
         self._actors.append(actor)
@@ -180,7 +183,7 @@ class Processor(IProcessor, IProcessorAPI):
 
     def _process_call_result(self, result: CallResult) -> None:
         self._stamp_tokens(result.calls, 
-                           self.step_count_to_time(result.step_count))
+                           self.steps_to_interval(result.step_count))
         self._step_counter = self._step_counter + result.step_count
         self._put_tokens(result.calls)
         self._enqueue_ready_tokens()
@@ -225,6 +228,13 @@ class Processor(IProcessor, IProcessorAPI):
         for i in sorted(ready_indices, reverse=True):
             self._token_pool.pop(i)
 
+    def _synch_time(self, target_time: Time) -> None:
+        time = self.time
+        if target_time <= time:
+            return
+        step_count_diff = self.interval_to_steps(target_time - time)
+        self._step_counter = self._step_counter + step_count_diff
+
     def _unblock_waiting(self) -> bool:
         if self._waiting_proc_addr is None:
             return True
@@ -233,7 +243,9 @@ class Processor(IProcessor, IProcessorAPI):
                                 -1) 
         if compat_token_idx == -1:
             return False
-        self._token_queue.append(self._token_pool.pop(compat_token_idx))
+        unblock_token = self._token_pool.pop(compat_token_idx)
+        self._token_queue.append(unblock_token)
+        self._synch_time(unblock_token.last_time)
         self._waiting_proc_addr = None
         return True
 
