@@ -4,7 +4,7 @@ from .interfaces import (
 
 
 class Procedure(IProcedure):
-    def __init__(self, name: str, state: ProcState):
+    def __init__(self, name: str, state: ProcState = ProcState.OPEN):
         self._name = name
         self._state = state
 

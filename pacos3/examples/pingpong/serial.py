@@ -2,7 +2,6 @@ import sys
 from typing import List
 import logging
 import argparse
-from pacos3.time import StepCount
 from pacos3.token import Address, Token
 from pacos3.procedure import Procedure, IProcessorAPI, ProcState, CallResult
 from pacos3.actor import Actor
@@ -27,12 +26,12 @@ class PingTriggerProc(Procedure):
                             .format(proc.step_count, 
                                     self._actor._pings_left))
             self._actor._pings_left = self._actor._pings_left - 1
-            return CallResult(1, [self.create_token(proc.step_count)])
+            return CallResult(1, [self.create_token()])
         proc.exit()
         return CallResult()
     
     @staticmethod
-    def create_token(self) -> Token:
+    def create_token() -> Token:
         return Token(Address(actor='pong'), None)
 
 
@@ -56,7 +55,7 @@ def run():
     ping_actor = PingActor(3)
     processor.add_actor(ping_actor)
     processor.add_actor(PongActor())
-    processor.add_source(SingleShotSource([PingTriggerProc.create_token(0)]))
+    processor.add_source(SingleShotSource([PingTriggerProc.create_token()]))
     while not processor.has_exited:
         processor.step()
 

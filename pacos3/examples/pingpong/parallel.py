@@ -6,6 +6,7 @@ from pacos3.time import Time, repr_time
 from pacos3.interfaces import Address, Token, ProcState, CallResult
 from pacos3.procedure import Procedure
 from pacos3.actor import Actor
+from pacos3.mock.sources import SingleShotSource
 from pacos3.processor import Processor, ProcessorConfig, IProcessorAPI
 from pacos3.board import Board
 
@@ -41,11 +42,11 @@ class PongTriggerProc(Procedure):
         super().__init__('trigger', ProcState.OPEN)
 
     def call(self, token: Token, proc: IProcessorAPI) -> CallResult:
-        if token is None:
-            return proc.wait()
-        logging.warning('time: {}, pong'.format(repr_time(proc.time)))
-        out_token = token.forward_target(Address(processor='A', actor='ping'))
-        return CallResult(1, [out_token])
+        out_token = None
+        if token is not None:
+            logging.warning('time: {}, pong'.format(repr_time(proc.time)))
+            out_token = token.forward_target(Address(processor='A', actor='ping'))
+        return proc.wait(CallResult(1, [out_token] if out_token else []))
 
 
 class PongActor(Actor):
@@ -55,6 +56,7 @@ class PongActor(Actor):
 
 def ping_main(processor: Processor) -> List[Address]:
     processor.add_actor(PingActor(3))
+    processor.add_source(SingleShotSource([PingTriggerProc.create_token()]))
     return [Address(actor='ping')]
 
 
