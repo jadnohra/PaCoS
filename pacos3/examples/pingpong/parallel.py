@@ -41,6 +41,7 @@ class PongTriggerProc(Procedure):
         super().__init__('trigger', ProcState.OPEN)
 
     def call(self, token: Token, proc: IProcessorAPI) -> CallResult:
+        logging.warning('time: {}, pong'.format(proc.time))
         out_token = token.forward_target(
                                     Address(processor='A', actor='ping'), 
                                     proc.time)
