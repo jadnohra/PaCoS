@@ -15,7 +15,7 @@ class ProcessorConfig:
     def __init__(self, *,
                 main: Callable[['Processor'], None] = None,
                 name: str = None,
-                frequency: float = 1000000000.0,  # 1 Ghz
+                frequency: float = 1.0*(10**9),
                 call_queue_rand: Random = None, 
                 call_source_rand: Random = None,
                 log_level: str = 'WARNING'):
