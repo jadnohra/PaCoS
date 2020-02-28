@@ -32,8 +32,8 @@ class PingTriggerProc(Procedure):
         return CallResult()
     
     @staticmethod
-    def create_token(step_stamp: StepCount) -> Token:
-        return Token(Address(actor='pong'), None, step_stamp)
+    def create_token(self) -> Token:
+        return Token(Address(actor='pong'), None)
 
 
 class PongTriggerProc(Procedure):
@@ -41,7 +41,7 @@ class PongTriggerProc(Procedure):
         super().__init__('trigger', ProcState.OPEN)
 
     def call(self, token: Token, proc: IProcessorAPI) -> CallResult:
-        out_token = token.forward_target(Address(actor='ping'), proc.step_count)
+        out_token = token.forward_target(Address(actor='ping'))
         return CallResult(1, [out_token])
 
 

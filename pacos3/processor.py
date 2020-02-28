@@ -120,7 +120,7 @@ class Processor(IProcessor, IProcessorAPI):
 
     @property
     def time(self) -> Time:
-        return self._paused_time + (self._step_counter / self._frequency)
+        return self._paused_time + self.step_count_to_time(self._step_counter)
 
     def exit(self) -> None:
         self._flag_exit = True
@@ -128,6 +128,9 @@ class Processor(IProcessor, IProcessorAPI):
     @property
     def has_exited(self) -> bool:
         return self._has_exited
+
+    def step_count_to_time(self, step_count: StepCount) -> Time:
+        return step_count / self._frequency
 
     def add_actor(self, actor: IActor) -> None:
         self._actors.append(actor)
@@ -156,19 +159,29 @@ class Processor(IProcessor, IProcessorAPI):
                       else token.source.actor)
         return self.get_actor(actor_name).get_procedure(token.target.proc)
 
+    def _stamp_tokens(self, tokens: List[Token], time_diff: TimeInterval = 0
+                      ) -> List[Token]:
+        for call in tokens:
+            call.stamp(self.time + time_diff)
+        return tokens
+
     def _generate_tokens(self) -> List[Token]:
         if self._token_source_rand:
             sources = copy.copy(self._sources)
             self._token_source_rand.shuffle(sources)
         else:
             sources = reversed(self._sources)
-        return sum([source.generate(self) for source in sources], [])
+        tokens = sum([source.generate(self) for source in sources], [])
+        return self._stamp_tokens(tokens)
 
     def _pop_queue_token(self) -> CallResult:
         if len(self._token_queue) == 0:
             return 0
         token = self._token_queue.pop()
-        return self.get_token_proc(token).call(token, self.api)
+        result = self.get_token_proc(token).call(token, self.api)
+        self._stamp_tokens(result.calls, 
+                           self.step_count_to_time(result.step_count))
+        return result
 
     def _is_token_proc_ready(self, token: Token):
         return self.get_token_proc(token).state != ProcState.CLOSED
@@ -192,6 +205,7 @@ class Processor(IProcessor, IProcessorAPI):
         self._put_tokens(board_tokens)
         self._enqueue_ready_tokens()
         if capture_paused_time and len(self._token_queue) > 0:
+            logging.error('{} {}'.format(self._token_queue[0], self.api.time))
             time_diff = self._token_queue[0].last_time - self.api.time
             self._paused_time = self._paused_time + max(0, time_diff)
         pre_step_count = self._step_counter

@@ -4,10 +4,10 @@ from .address import Address
 
 
 class Token:
-    def __init__(self, target: Address, payload: Any, time: Time):
+    def __init__(self, target: Address, payload: Any):
         self._target = target
         self._payload = payload
-        self._stamps = [time]
+        self._stamps = []
     
     @property
     def payload(self) -> Any:
@@ -28,6 +28,9 @@ class Token:
     @property
     def wire_time(self) -> Time:
         return self._stamps[-1] - self._stamps[0]
+
+    def stamp(self, time: Time) -> None:
+        self._stamps.append(time)
 
     def _get_stamp_time(self, time: Time = None) -> Time:
         return time if time is not None else self.last_time
