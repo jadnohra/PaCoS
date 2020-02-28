@@ -22,21 +22,28 @@ class Token:
         return self._stamps[0].time
 
     @property
+    def last_time(self) -> Time:
+        return self._stamps[-1].time
+
+    @property
     def wire_time(self) -> Time:
         return self._stamps[-1].time - self._stamps[0].time
 
-    def forward_processor(self, processor: str, time: Time) -> "Token":
-        self._stamps.append(time)
+    def _get_stamp_time(self, time: Time = None) -> Time:
+        return time if time is not None else self.last_time
+
+    def forward_processor(self, processor: str, time: Time = None) -> "Token":
+        self._stamps.append(self._get_stamp_time(time))
         self._target.processor = processor
         return self
 
-    def forward_actor(self, actor: str, time: Time) -> "Token":
-        self._stamps.append(time)
+    def forward_actor(self, actor: str, time: Time = None) -> "Token":
+        self._stamps.append(self._get_stamp_time(time))
         self._target.actor = actor
         return self
 
-    def forward_target(self, target: Address, time: Time) -> "Token":
-        self._stamps.append(time)
+    def forward_target(self, target: Address, time: Time = None) -> "Token":
+        self._stamps.append(self._get_stamp_time(time))
         self._target = target
         return self
 
