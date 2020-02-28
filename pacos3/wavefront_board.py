@@ -4,7 +4,6 @@ import logging
 import multiprocessing
 from typing import List, Tuple, Callable, Dict, Any
 from .interfaces import TimeInterval, Time, Token
-from .manual_clock import ManualClock
 from .processor import ProcessorConfig, Processor, ProcessorIPC
 
 
@@ -12,8 +11,8 @@ class Board:
     class ProcessState:
         def __init__(self, config: ProcessorConfig, mp_context: Any):
             self.process_ipc = Processor.mp_create(config, mp_context, False)
-            self.time = -1
             self.tokens = []
+            self.snap = None
 
     def __init__(self, processor_configs = List[ProcessorConfig]):
         mp_context = multiprocessing.get_context('spawn')
@@ -40,23 +39,38 @@ class Board:
             proc_state = self._proc_states[i]
             step_msg = proc_state.process_ipc.recv_step_result()
             self._forward_tokens(step_msg.result.tokens)
-            proc_state.time = step_msg.state_snap.time
+            proc_state.snap = step_msg.state_snap
+
+    def _has_exited_index(self, proc_index) -> bool:
+        proc_state = self._proc_states[proc_index]
+        return proc_state.snap.has_exited if proc_state.snap else False
 
     def _is_steppable(self, proc_index: int) -> bool:
-        return self._proc_states[proc_index].time < self._wave_time
+        proc_state = self._proc_states[proc_index]
+        return (proc_state.snap is None 
+                or (not proc_state.snap.has_exited
+                    and proc_state.snap.time < self._wave_time))
 
-    def _step(self) -> List[Time]:
+    def step(self) -> List[Time]:
         steppable_indices = [i for i in range(len(self._proc_states)) 
                              if self._is_steppable(i)]
-        if len(steppable_indices) == 0:
+        if len(steppable_indices) == 0 and not self.all_exited:
             # No processor is behind the wave, speculatively step all
             steppable_indices = range(len(self._proc_states))
         self._step_parall(steppable_indices)
-        return [proc_state.time for proc_state in self._proc_states]
+        return [proc_state.snap.time for proc_state in self._proc_states]
 
-    def step(self) -> TimeInterval:
-        return self._step()
+    @property
+    def all_exited(self) -> bool:
+        return all([self._has_exited_index(i) 
+                   for i in range(len(self._proc_states))])
 
+    @property
+    def any_exited(self) -> bool:
+        return any([self._has_exited_index(i) 
+                   for i in range(len(self._proc_states))])
+
+    @property
     def has_tokens(self) -> bool:
         return sum([len(x.tokens) for x in self._proc_states]) > 0
 

@@ -19,15 +19,15 @@ class Token:
 
     @property
     def emission_time(self) -> Time:
-        return self._stamps[0].time
+        return self._stamps[0]
 
     @property
     def last_time(self) -> Time:
-        return self._stamps[-1].time
+        return self._stamps[-1]
 
     @property
     def wire_time(self) -> Time:
-        return self._stamps[-1].time - self._stamps[0].time
+        return self._stamps[-1] - self._stamps[0]
 
     def _get_stamp_time(self, time: Time = None) -> Time:
         return time if time is not None else self.last_time

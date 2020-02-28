@@ -2,12 +2,11 @@ import sys
 from typing import List
 import logging
 import argparse
-from pacos3.interfaces import Address, Token, Time, ProcState, CallResult
+from pacos3.interfaces import Address, Token, ProcState, CallResult, Time
 from pacos3.procedure import Procedure
 from pacos3.actor import Actor
 from pacos3.mock.sources import SingleShotSource
-from pacos3.manual_clock import ManualClock
-from pacos3.processor import Processor, ProcessorConfig
+from pacos3.processor import Processor, ProcessorConfig, IProcessorAPI
 from pacos3.wavefront_board import Board
 
 
@@ -23,12 +22,13 @@ class PingTriggerProc(Procedure):
         super().__init__('trigger', ProcState.OPEN)
         self._actor = actor
 
-    def call(self, token: Token, time: Time) -> CallResult:
+    def call(self, token: Token, proc: IProcessorAPI) -> CallResult:
         if self._actor._pings_left > 0:
             logging.warning('time: {}, pings_left: {}'
-                            .format(time, self._actor._pings_left))
+                            .format(proc.time, self._actor._pings_left))
             self._actor._pings_left = self._actor._pings_left - 1
-            return CallResult(1, [self.create_token(time)])
+            return CallResult(1, [self.create_token(proc.time)])
+        proc.exit()
         return CallResult()
     
     @staticmethod
@@ -40,9 +40,10 @@ class PongTriggerProc(Procedure):
     def __init__(self):
         super().__init__('trigger', ProcState.OPEN)
 
-    def call(self, token: Token, time: Time) -> CallResult:
+    def call(self, token: Token, proc: IProcessorAPI) -> CallResult:
         out_token = token.forward_target(
-                                    Address(processor='A', actor='ping'), time)
+                                    Address(processor='A', actor='ping'), 
+                                    proc.time)
         return CallResult(1, [out_token])
 
 
@@ -66,11 +67,9 @@ def run(log_level: str = 'WARNING'):
                                    log_level=log_level), 
                    ProcessorConfig(name='B', main=pong_main, 
                                    log_level=log_level)])
-    while True:
-        interval = board.step()
-        if not board.has_tokens() and interval == 0:
-            break
-    board.join()
+    while not board.any_exited:
+        board.step()
+    board.exit()
 
 
 if __name__ == "__main__":
