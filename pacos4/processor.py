@@ -3,6 +3,7 @@ import multiprocessing
 import logging
 from random import Random
 from abc import ABC, abstractmethod
+from operator import attrgetter
 from typing import List, Any, Callable, Dict
 from .time import TimeInterval, Time, StepCount
 from .call import CallArg, Call, CallResult
@@ -150,6 +151,8 @@ class Processor(IProcessor, IProcessorAPI):
                 self._token_pool.append(token)
             else:
                 self._board_tokens.append(token)
+        self._token_pool = sorted(self._token_pool, 
+                                  key=attrgetter('last_time'))
 
     def get_actor(self, actor_name: str) -> IActor:
         if actor_name is None and len(self._actors) >= 0:
