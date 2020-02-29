@@ -1,5 +1,5 @@
 import sys
-from typing import List
+from typing import List, Any
 import logging
 import argparse
 import time
@@ -65,16 +65,6 @@ def pong_main(processor: Processor) -> None:
     
 
 def run(log_lvl: str = 'WARNING'):
-    """
-    The pingpong protocol is race-condition free by design.
-    The only challenge when running it in simulation is that the simulation 
-        hardware may be different.
-    On non-simulation hardware, the pong agent busy waits 4 times, 
-        because the ping calculation takes 5 cycles.
-    This behavior is faithfully reproduced on simulation hardware, 
-     even though the pong simulation hardware is slower than the non-simulated
-     one (emulated using time.sleep).
-    """
     print('=== pingpong-parallel-slow_sim_hw ===')
     processor_configs = [
         ProcessorConfig(name='A', main=ping_main, log_level=log_lvl), 
@@ -86,10 +76,32 @@ def run(log_lvl: str = 'WARNING'):
     board.exit()
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+def description() -> str:
+    return \
+    """
+    The pingpong protocol is race-condition free by design.
+    The only challenge when running it in simulation is that the simulation 
+     hardware may be different.
+    On non-simulation hardware, the pong agent busy waits 4 times, 
+     because the ping calculation takes 5 cycles.
+    This behavior is faithfully reproduced on simulation hardware, 
+     even though the pong simulation hardware is slower than the non-simulated
+     one (emulated using time.sleep).
+    """
+
+
+def process_args() -> Any:
+    parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--log", default='WARNING')
+    parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
+                        help=description())
     args = parser.parse_args(sys.argv[1:])
     logging.basicConfig(format='%(levelname)s:%(message)s',
                         level=logging.getLevelName(args.log.upper()))
+    
+    return args
+
+
+if __name__ == "__main__":
+    args = process_args()
     run(args.log)
