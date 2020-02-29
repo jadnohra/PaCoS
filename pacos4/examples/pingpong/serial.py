@@ -55,7 +55,7 @@ def run():
     processor.add_actor(ping_actor)
     processor.add_actor(PongActor())
     processor.put_calls([PingTriggerProc.create_call()])
-    while not processor.has_exited:
+    while processor.has_work():
         processor.step()
 
 

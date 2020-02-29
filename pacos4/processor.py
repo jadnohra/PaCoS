@@ -220,6 +220,10 @@ class Processor(IProcessor, IProcessorAPI):
         self._waiting_proc_addr = None
         return True
 
+    def has_work(self) -> bool:
+        return (len(self._token_pool) + len(self._token_queue) 
+                + len(self._board_tokens)) > 0
+
     def step(self, board_tokens: List[Token]=[]) -> None:
         self._put_tokens(board_tokens)
         if not self._unblock_waiting():

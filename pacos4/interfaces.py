@@ -97,7 +97,11 @@ class IProcessor(IProcessorAPI):
     def api(self) -> IProcessorAPI:
         pass
 
-    @abstractproperty
+    @abstractmethod
+    def has_work(self) -> bool:
+       pass
+
+    @abstractmethod
     def has_exited(self) -> bool:
         pass
 
@@ -105,4 +109,4 @@ class IProcessor(IProcessorAPI):
         return ProcessorSnapshot(step_count=self.api.step_count, 
                                  time=self.api.time, 
                                  frequency=self.api.frequency, 
-                                 has_exited=self.has_exited)
+                                 has_exited=self.has_exited())
