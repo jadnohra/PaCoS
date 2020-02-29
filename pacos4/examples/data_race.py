@@ -24,7 +24,6 @@ class FeedProc(Procedure):
         super().__init__('feed')
 
     def call(self, arg: CallArg, __, proxor: IProcessorAPI) -> CallResult:
-        # TODO board needs to respect time of tokens when gathered!
         return CallResult(random.randint(0, 5), 
                           [Call(arg, Address(processor='C', actor='compute'))])
 
