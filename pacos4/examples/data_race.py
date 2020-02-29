@@ -43,10 +43,10 @@ class FwdDataProc(Procedure):
 
 class SinkActor(Actor):
     def __init__(self):
-        super().__init__('sink', [SinkProc()])
+        super().__init__('sink', [ConsumeProc()])
 
 
-class SinkProc(Procedure):
+class ConsumeProc(Procedure):
     def __init__(self):
         super().__init__('consume')
 
