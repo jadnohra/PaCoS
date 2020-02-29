@@ -176,12 +176,14 @@ class Processor(IProcessor, IProcessorAPI):
         result = self.get_proc(address).call(token.call, token, self.api)
         self._process_call_result(result)
 
-    def _pop_call_queue_token(self) -> None:
+    def _pop_call_queue_token(self, enable_busy_wait=True) -> None:
         if len(self._token_queue) != 0:
             token = self._token_queue.pop()
             self.do_call(token.target, token)
         else:
-            self._step_counter = self._step_counter + 1  # Busy wait
+            if enable_busy_wait:
+                logging.info('busy wait')
+                self._step_counter = self._step_counter + 1
 
     def _is_token_ready(self, token: Token) -> bool:
         return token.call.call_time <= self.time

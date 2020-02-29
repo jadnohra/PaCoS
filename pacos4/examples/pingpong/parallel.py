@@ -25,10 +25,10 @@ class PingTriggerProc(Procedure):
 
     def call(self, _, __, proxor: IProcessorAPI) -> CallResult:
         if self._actor._pings_left > 0:
-            logging.warning('time: {}, pings_left: {}'.format(
+            logging.warning('PING - time: {}, pings_left: {}'.format(
                             repr_time(proxor.time), self._actor._pings_left))
             self._actor._pings_left = self._actor._pings_left - 1
-            return CallResult(1, [self.create_call()])
+            return CallResult(5, [self.create_call()])
         return proxor.exit()
     
     @staticmethod
@@ -41,7 +41,7 @@ class PongTriggerProc(Procedure):
         super().__init__('trigger')
 
     def call(self, arg: CallArg, _,  proxor: IProcessorAPI) -> CallResult:
-        logging.warning('time: {}, pong'.format(repr_time(proxor.time)))
+        logging.warning('PONG - time: {}, pong'.format(repr_time(proxor.time)))
         out_call = Call(arg, Address(processor='A', actor='ping'))
         return CallResult(1, [out_call])
 
