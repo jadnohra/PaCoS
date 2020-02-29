@@ -1,10 +1,11 @@
 from .pingpong.serial import main as main_pinpong_serial
 from .pingpong.parallel import main as main_pinpong_parallel
-from .pingpong.parallel_slow_sim_hw import main \
-        as main_pinpong_parallel_slow_sim_hw
+from .pingpong.parallel_slow_sim_hw import (
+        main as main_pinpong_parallel_slow_sim_hw)
 from .parallel_count import main as main_parallel_count
-from .timer_race import main as main_timer_race
-from .data_race import main as main_data_race
+from .race.timer_race import main as main_timer_race
+from .race.data_race import main as main_data_race
+from .race.data_race import main as main_data_race_tackon
 
 
 if __name__ == "__main__":

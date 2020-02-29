@@ -53,15 +53,18 @@ def source_B_main(processor: Processor) -> None:
 def sink_main(processor: Processor) -> None:
     processor.add_actor(SinkActor())
 
-
-def run(log_lvl: str = 'WARNING'):
-    print('=== data-race ===')
+def create_board(log_lvl: str = 'WARNING') -> Board:
     processor_configs = [
         ProcessorConfig(name='A', main=source_A_main, log_level=log_lvl), 
         ProcessorConfig(name='B', main=source_B_main, log_level=log_lvl), 
         ProcessorConfig(name='C', main=sink_main, log_level=log_lvl)
         ]
-    board = Board(processor_configs)
+    return Board(processor_configs)
+
+
+def run(log_lvl: str = 'WARNING'):
+    print('=== data-race ===')
+    board = create_board(log_lvl)
     while not board.any_exited():
         board.step()
     board.exit()
@@ -72,7 +75,6 @@ def description() -> str:
     """
     A data race demo.
     """
-    # TODO: tack-on synchronization
 
 
 def process_args() -> Any:
@@ -87,6 +89,7 @@ def process_args() -> Any:
                         level=logging.getLevelName(args.log.upper()))
     random.seed(time.time())
     return args
+
 
 def main():
     args = process_args()
