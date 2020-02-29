@@ -49,15 +49,18 @@ class IProcessorAPI(INamed):
     def frequency(self) -> float:
         pass
 
-class ProcState(Enum):
-    CLOSED = auto()
-    OPEN = auto()
-
-
 
 class IProcedure(INamed):
-    @abstractproperty
-    def state(self) -> ProcState:
+    @abstractmethod
+    def call_control(self, processor: IProcessorAPI) -> None:
+        # ctrl_wait_until(a, t)
+        # ctrl_wait_on(a, b)
+        # ret next_ctrl_time
+        # fabio ctrl model -> ctrl_wait_until(a, t) (b,t2) from actor call_control
+        # once the time is reached do what?
+        #   - if in synch mode -> sim_synch -> block sim
+        #   - if in time model mode -> don't block sim, but we used the info not to busy wait
+        # serial pingpong? 
         pass
 
     @abstractmethod

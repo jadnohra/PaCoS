@@ -229,7 +229,9 @@ class Processor(IProcessor, IProcessorAPI):
             self._token_pool.pop(i)
 
     def _synch_time(self, target_time: Time) -> None:
-        logging.info("{} -> {}".format(self.time, target_time))
+        # We maybe jumping over sources -> need triggers with known time
+        # + busy wait
+        # + jump if nothing is skipped    
         time = self.time
         if target_time <= time:
             return
