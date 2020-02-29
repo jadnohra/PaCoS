@@ -173,7 +173,7 @@ class Processor(IProcessor, IProcessorAPI):
 
     def do_call(self, address: Address, token: Token) -> None:
         self._call_stack_proc_addr = copy.copy(address)
-        result = self.get_proc(address).call(token.call, token, self.api)
+        result = self.get_proc(address).call(token.call.arg, token, self.api)
         self._process_call_result(result)
 
     def _pop_call_queue_token(self, enable_busy_wait=True) -> None:
