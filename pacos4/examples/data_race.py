@@ -14,30 +14,31 @@ from pacos4.time import repr_time
 from pacos4.board import Board
 
 
+class SourceActor(Actor):
+    def __init__(self):
+        super().__init__('source', [FeedProc()])
+
+
+class FeedProc(Procedure):
+    def __init__(self):
+        super().__init__('feed')
+
+    def call(self, arg: CallArg, __, proxor: IProcessorAPI) -> CallResult:
+         return CallResult(random.randint(0, 5), 
+                           [Call(arg, Address(processor='C', actor='compute'))])
+
+
 class ComputeActor(Actor):
     def __init__(self):
-        super().__init__('compute', [RecvDataProc(self), TimerSendProc(self)])
-        self._value = 'UNINITIALIZED'
+        super().__init__('compute', [FwdDataProc()])
 
 
-class RecvDataProc(Procedure):
-    def __init__(self, actor: ComputeActor):
-        super().__init__('recv')
-        self._actor = actor
+class FwdDataProc(Procedure):
+    def __init__(self):
+        super().__init__('fwd')
 
     def call(self, arg: CallArg, _, proxor: IProcessorAPI) -> CallResult:
-        self._actor._value = arg
-        return CallResult()
-
-
-class TimerSendProc(Procedure):
-    def __init__(self, actor: ComputeActor):
-        super().__init__('send')
-        self._actor = actor
-
-    def call(self, arg: CallArg, _, proxor: IProcessorAPI) -> CallResult:
-        return CallResult(1, [Call(self._actor._value, 
-                              Address(processor='C', actor='sink'))])
+        return CallResult(1, [Call(arg, Address(processor='D', actor='sink'))])
 
 
 class SinkActor(Actor):
@@ -54,17 +55,17 @@ class SinkProc(Procedure):
         return proxor.exit()
 
 
-def source_main(processor: Processor) -> None:
-    processor.put_calls([Call('OK', 
-                              Address(processor='B', actor='compute'),
-                              call_step=random.randint(0, 10))])
+def source_A_main(processor: Processor) -> None:
+    processor.add_actor(SourceActor())
+    processor.put_calls([Call('A', Address(actor='source'))])
+
+def source_B_main(processor: Processor) -> None:
+    processor.add_actor(SourceActor())
+    processor.put_calls([Call('B', Address(actor='source'))])
 
 
 def compute_main(processor: Processor) -> None:
     processor.add_actor(ComputeActor())
-    processor.put_calls([Call(None, 
-                              Address(actor='compute', proc='send'),
-                              call_step=5)])
 
 
 def sink_main(processor: Processor) -> None:
@@ -74,9 +75,10 @@ def sink_main(processor: Processor) -> None:
 def run(log_lvl: str = 'WARNING'):
     print('=== timer-race ===')
     processor_configs = [
-        ProcessorConfig(name='A', main=source_main, log_level=log_lvl), 
-        ProcessorConfig(name='B', main=compute_main, log_level=log_lvl),
-        ProcessorConfig(name='C', main=sink_main, log_level=log_lvl)
+        ProcessorConfig(name='A', main=source_A_main, log_level=log_lvl), 
+        ProcessorConfig(name='B', main=source_B_main, log_level=log_lvl), 
+        ProcessorConfig(name='C', main=compute_main, log_level=log_lvl),
+        ProcessorConfig(name='D', main=sink_main, log_level=log_lvl)
         ]
     board = Board(processor_configs)
     while not board.any_exited():
@@ -87,7 +89,7 @@ def run(log_lvl: str = 'WARNING'):
 def description() -> str:
     return \
     """
-    A timer race demo.
+    A data race demo.
     """
     # TODO: tack-on synchronization
 
