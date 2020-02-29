@@ -27,7 +27,6 @@ class PingTriggerProc(Procedure):
                                     self._actor._pings_left))
             self._actor._pings_left = self._actor._pings_left - 1
             return CallResult(1, [self.create_call()])
-        proxor.exit()
         return CallResult()
     
     @staticmethod
