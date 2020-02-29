@@ -2,6 +2,7 @@ import sys
 from typing import List
 import logging
 import argparse
+import time
 from pacos4.token import Address, Token
 from pacos4.call import CallArg, Call, CallResult
 from pacos4.procedure import Procedure, IProcessorAPI
@@ -28,7 +29,7 @@ class PingTriggerProc(Procedure):
             logging.warning('PING - time: {}, pings_left: {}'.format(
                             repr_time(proxor.time), self._actor._pings_left))
             self._actor._pings_left = self._actor._pings_left - 1
-            return CallResult(1, [self.create_call()])
+            return CallResult(5, [self.create_call()])
         return proxor.exit()
     
     @staticmethod
@@ -42,6 +43,9 @@ class PongTriggerProc(Procedure):
 
     def call(self, arg: CallArg, _,  proxor: IProcessorAPI) -> CallResult:
         logging.warning('PONG - time: {}, pong'.format(repr_time(proxor.time)))
+        # Note that busy waiting still happens even though the simulation
+        # hardware of the pong agent is very slow (due to the sleep below)
+        time.sleep(0.2)
         out_call = Call(arg, Address(processor='A', actor='ping'))
         return CallResult(1, [out_call])
 
@@ -62,10 +66,10 @@ def pong_main(processor: Processor) -> List[Address]:
     
 
 def run(log_lvl: str = 'WARNING'):
-    print('=== pingpong-parallel ===')
+    print('=== pingpong-parallel-slow_sim_hw ===')
     processor_configs = [
         ProcessorConfig(name='A', main=ping_main, log_level=log_lvl), 
-        ProcessorConfig(name='B', main=pong_main, log_level=log_lvl)
+        ProcessorConfig(name='B', main=pong_main, log_level='INFO')
         ]
     board = Board(processor_configs)
     while not board.any_exited():
