@@ -7,10 +7,12 @@ CallArg = Any
 
 
 class Call:
-    def __init__(self, arg: CallArg, target: Address, call_time: Time = 0.0):
+    def __init__(self, arg: CallArg, target: Address, 
+                 call_time: Time = None, call_step: StepCount = None):
         self.arg = arg
         self.target = target
         self.call_time = call_time
+        self.call_step = call_step
 
     def __str__(self) -> str:
         return '{} -> {} @ {}'.format(self.arg, self.target, self.call_time)

@@ -160,7 +160,7 @@ class Processor(IProcessor, IProcessorAPI):
         return self.get_actor(address.actor).get_procedure(address.proc)
 
     def _process_call_result(self, result: CallResult) -> None:
-        self._step_counter = self._step_counter + result.step_count
+        self._step_counter = self._step_counter + max(1, result.step_count)
         time = self.time
         tokens = [Token(call).stamp(time) for call in result.calls]
         self._put_tokens(tokens)
@@ -186,7 +186,11 @@ class Processor(IProcessor, IProcessorAPI):
                 self._step_counter = self._step_counter + 1
 
     def _is_token_ready(self, token: Token) -> bool:
-        return token.call.call_time <= self.time
+        time_ready = (token.call.call_time is None 
+                      or token.call.call_time <= self.time)
+        step_ready = (token.call.call_step is None 
+                      or token.call.call_step <= self.step_count)
+        return time_ready and step_ready
 
     def _enqueue_ready_tokens(self) -> None:
         ready_indices = [i for i, token in enumerate(self._token_pool)
