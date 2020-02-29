@@ -96,7 +96,8 @@ def process_args() -> Any:
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--log", default='WARNING')
     parser.add_argument("--run_count", default=5, type=int)
-    parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
+    parser.add_argument('-h', '--help', action='help', 
+                        default=argparse.SUPPRESS,
                         help=description())
     args = parser.parse_args(sys.argv[1:])
     logging.basicConfig(format='%(levelname)s:%(message)s',
