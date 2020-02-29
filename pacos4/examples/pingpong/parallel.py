@@ -11,7 +11,6 @@ from pacos4.time import repr_time
 from pacos4.board import Board
 
 
-
 class PingActor(Actor):
     def __init__(self, ping_count: int):
         self._pings_left = ping_count
