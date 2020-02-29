@@ -63,15 +63,12 @@ class Board:
         self._step_parall(steppable_indices)
         return [proc_state.snap.time for proc_state in self._proc_states]
 
-    @property
     def all_exited(self) -> bool:
         return all([x.snap.has_exited for x in self._proc_states])
 
-    @property
     def any_exited(self) -> bool:
         return any([x.snap.has_exited for x in self._proc_states])
 
-    @property
     def has_tokens(self) -> bool:
         return sum([len(x.tokens) for x in self._proc_states]) > 0
 

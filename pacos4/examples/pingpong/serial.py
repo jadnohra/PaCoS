@@ -20,7 +20,7 @@ class PingTriggerProc(Procedure):
         super().__init__('trigger')
         self._actor = actor
 
-    def call(self, arg: CallArg, _, proxor: IProcessorAPI) -> CallResult:
+    def call(self, _, __, proxor: IProcessorAPI) -> CallResult:
         if self._actor._pings_left > 0:
             logging.warning('step: {}, pings_left: {}'.format(
                              proxor.step_count, self._actor._pings_left))

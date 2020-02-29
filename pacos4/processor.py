@@ -130,7 +130,6 @@ class Processor(IProcessor, IProcessorAPI):
         time = self.time
         self._put_tokens([Token(call).stamp(time) for call in calls])
 
-    @property
     def has_exited(self) -> bool:
         return self._has_exited
 
@@ -181,6 +180,8 @@ class Processor(IProcessor, IProcessorAPI):
         if len(self._token_queue) != 0:
             token = self._token_queue.pop()
             self.do_call(token.target, token)
+        else:
+            self._step_counter = self._step_counter + 1  # Busy wait
 
     def _is_token_ready(self, token: Token) -> bool:
         return token.call.call_time <= self.time
