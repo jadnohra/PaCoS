@@ -72,10 +72,14 @@ def run(log_lvl: str = 'WARNING'):
     board.exit()
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--log", default='WARNING')
     args = parser.parse_args(sys.argv[1:])
     logging.basicConfig(format='%(levelname)s:%(message)s',
                         level=logging.getLevelName(args.log.upper()))
     run(args.log)
+
+
+if __name__ == "__main__":
+    main()

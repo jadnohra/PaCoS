@@ -72,7 +72,7 @@ def sink_main(processor: Processor) -> None:
 
 
 def run(log_lvl: str = 'WARNING'):
-    print('=== parallel-count ===')
+    print('=== timer-race ===')
     processor_configs = [
         ProcessorConfig(name='A', main=source_main, log_level=log_lvl), 
         ProcessorConfig(name='B', main=compute_main, log_level=log_lvl),
@@ -89,12 +89,13 @@ def description() -> str:
     """
     A timer race demo.
     """
+    # TODO: tack-on synchronization
 
 
 def process_args() -> Any:
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--log", default='WARNING')
-    parser.add_argument("--run_count", default=1, type=int)
+    parser.add_argument("--run_count", default=5, type=int)
     parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
                         help=description())
     args = parser.parse_args(sys.argv[1:])
@@ -103,8 +104,11 @@ def process_args() -> Any:
     random.seed(time.time())
     return args
 
-
-if __name__ == "__main__":
+def main():
     args = process_args()
     for _ in range(args.run_count):
         run(args.log)
+
+
+if __name__ == "__main__":
+    main()

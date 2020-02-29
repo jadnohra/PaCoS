@@ -5,105 +5,60 @@ Pa(rallel) Co(mputation) S(imulator)
 ---
 
 ```
-$ python -m pacos --all
-=== ping-pong ===
-ping
-pong
-ping
-pong
-ping
-pong
-=== perfect ===
-* 0  OK-LAT(0)
-* 1  OK-LAT(0)
-* 2  OK-LAT(0)
-* 3  OK-LAT(0)
-* 4  OK-LAT(0)
-=== inverted ===
-* 0  STARVING-LAT(N/A)
-* 1  OK-LAT(-1)
-* 2  OK-LAT(-1)
-* 3  OK-LAT(-1)
-* 4  OK-LAT(-1)
-=== nondet-impulse ===
-* 0  STARVING-LAT(N/A)
-* 1  OK-LAT(-1)
-* 2  DROPPING(1)-LAT(0)
-* 3  STARVING-LAT(N/A)
-* 4  OK-LAT(-1)
-* 5  OK-LAT(-1)
-* 6  OK-LAT(-1)
-* 7  OK-LAT(-1)
-* 8  OK-LAT(-1)
-* 9  DROPPING(1)-LAT(0)
-=== starving ===
-* 0  STARVING-LAT(N/A)
-* 1  STARVING-LAT(N/A)
-* 2  STARVING-LAT(N/A)
-* 3  OK-LAT(0)
-* 4  STARVING-LAT(N/A)
-* 5  STARVING-LAT(N/A)
-* 6  STARVING-LAT(N/A)
-* 7  OK-LAT(0)
-* 8  STARVING-LAT(N/A)
-* 9  STARVING-LAT(N/A)
-=== dropping ===
-* 0  OK-LAT(0)
-* 3  DROPPING(2)-LAT(0)
-* 6  DROPPING(2)-LAT(0)
-* 9  DROPPING(2)-LAT(0)
-=== fuzzy ===
-* 0  STARVING-LAT(N/A)
-* 4  OK-LAT(-4)
-* 8  OK-LAT(-1)
-* 12  OK-LAT(-1)
-* 16  STARVING-LAT(N/A)
-* 20  OK-LAT(-2)
-* 24  DROPPING(1)-LAT(-1)
-* 28  OK-LAT(-2)
-=== unsynch ===
-* 0 A2 STARVING-LAT(N/A)
-* 0 A1 OK-LAT(0)
-* 1 A2 STARVING-LAT(N/A)
-* 1 A1 OK-LAT(0)
-* 2 A2 OK-LAT(-2)
-* 2 A1 OK-LAT(0)
-* 3 A2 OK-LAT(-2)
-* 3 A1 OK-LAT(0)
-* 4 A2 OK-LAT(-2)
-* 4 A1 OK-LAT(0)
-=== synch ===
-* 0 A1 OK-LAT(0)
-* 0 A2 OK-LAT(0)
-* 1 A1 OK-LAT(0)
-* 1 A2 OK-LAT(0)
-* 2 A1 OK-LAT(0)
-* 2 A2 OK-LAT(0)
-* 3 A1 OK-LAT(0)
-* 3 A2 OK-LAT(0)
-* 4 A1 OK-LAT(0)
-* 4 A2 OK-LAT(0)
-=== unsynch-slow ===
-* 0 A2 STARVING-LAT(N/A)
-* 0 A1 OK-LAT(0)
-* 1 A2 STARVING-LAT(N/A)
-* 1 A1 OK-LAT(0)
-* 2 A2 STARVING-LAT(N/A)
-* 2 A1 OK-LAT(0)
-* 3 A2 STARVING-LAT(N/A)
-* 3 A1 OK-LAT(0)
-* 4 A2 OK-LAT(-4)
-* 4 A1 OK-LAT(0)
-=== synch-slow ===
-* 0 A1 OK-LAT(0)
-* 1 A2 OK-LAT(-1)
-* 1 A1 OK-LAT(0)
-* 2 A2 OK-LAT(-1)
-* 2 A1 OK-LAT(0)
-* 3 A2 OK-LAT(-1)
-* 3 A1 OK-LAT(0)
-* 4 A2 OK-LAT(-1)
-* 4 A1 OK-LAT(0)
+$ python -m pacos4.examples.all
+
+=== pingpong-serial ===
+WARNING: step: 1, pings_left: 3
+WARNING: step: 3, pings_left: 2
+WARNING: step: 5, pings_left: 1
+=== pingpong-parallel ===
+WARNING-17695: PING - time: 0.00e+00, pings_left: 3
+WARNING-17696: PONG - time: 1.00e-09, pong
+WARNING-17695: PING - time: 2.00e-09, pings_left: 2
+WARNING-17696: PONG - time: 3.00e-09, pong
+WARNING-17695: PING - time: 4.00e-09, pings_left: 1
+WARNING-17696: PONG - time: 5.00e-09, pong
+=== pingpong-parallel-slow_sim_hw ===
+WARNING-17697: PING - time: 0.00e+00, pings_left: 3
+INFO-17698: busy wait
+WARNING-17698: PONG - time: 1.00e-09, pong
+INFO-17698: busy wait
+INFO-17698: busy wait
+INFO-17698: busy wait
+INFO-17698: busy wait
+WARNING-17697: PING - time: 5.00e-09, pings_left: 2
+WARNING-17698: PONG - time: 6.00e-09, pong
+INFO-17698: busy wait
+INFO-17698: busy wait
+INFO-17698: busy wait
+INFO-17698: busy wait
+WARNING-17697: PING - time: 1.00e-08, pings_left: 1
+WARNING-17698: PONG - time: 1.10e-08, pong
+INFO-17698: busy wait
+INFO-17698: busy wait
+INFO-17698: busy wait
+INFO-17698: busy wait
+=== parallel-count ===
+WARNING-17699: time: 0.00e+00, count: 0
+WARNING-17700: time: 0.00e+00, count: 0
+WARNING-17701: time: 0.00e+00, count: 0
+WARNING-17701: time: 1.00e-09, count: 1
+WARNING-17700: time: 1.00e-09, count: 1
+WARNING-17699: time: 1.00e-09, count: 1
+WARNING-17699: time: 2.00e-09, count: 2
+WARNING-17700: time: 2.00e-09, count: 2
+WARNING-17701: time: 2.00e-09, count: 2
+0.9906778509994183 s. (wall time)
+=== timer-race ===
+WARNING-17704: Sink received value: OK
+=== timer-race ===
+WARNING-17707: Sink received value: OK
+=== timer-race ===
+WARNING-17710: Sink received value: OK
+=== timer-race ===
+WARNING-17713: Sink received value: UNINITIALIZED
+=== timer-race ===
+WARNING-17716: Sink received value: OK
 ```
 
 # Credits

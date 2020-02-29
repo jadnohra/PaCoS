@@ -102,6 +102,9 @@ def process_args() -> Any:
     return args
 
 
-if __name__ == "__main__":
+def main():
     args = process_args()
     run(args.log)
+
+if __name__ == "__main__":
+    main()

@@ -87,9 +87,13 @@ def process_args() -> Any:
     return args
 
 
-if __name__ == "__main__":
+def main():
     args = process_args()
     start = timeit.default_timer()
     run(args.log)
     end = timeit.default_timer()
     print('{} s. (wall time)'.format(end - start))
+
+
+if __name__ == "__main__":
+    main()

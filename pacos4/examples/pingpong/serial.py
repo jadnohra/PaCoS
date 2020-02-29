@@ -57,10 +57,14 @@ def run():
         processor.step()
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--log", default='WARNING')
     args = parser.parse_args(sys.argv[1:])
     logging.basicConfig(format='%(levelname)s: %(message)s',
                         level=logging.getLevelName(args.log.upper()))
     run()
+
+
+if __name__ == "__main__":
+    main()
