@@ -4,6 +4,7 @@ import logging
 import argparse
 import time
 import timeit
+import random
 from pacos4.token import Address, Token
 from pacos4.call import CallArg, Call, CallResult
 from pacos4.procedure import Procedure, IProcessorAPI
@@ -54,14 +55,16 @@ class SinkProc(Procedure):
 
 
 def source_main(processor: Processor) -> None:
-    processor.put_calls([Call('OK', Address(processor='B', actor='compute'))])
+    processor.put_calls([Call('OK', 
+                              Address(processor='B', actor='compute'),
+                              call_step=random.randint(0,10))])
 
 
 def compute_main(processor: Processor) -> None:
     processor.add_actor(ComputeActor())
     processor.put_calls([Call(None, 
                               Address(actor='compute', proc='send'),
-                              call_step=2)])
+                              call_step=5)])
 
 
 def sink_main(processor: Processor) -> None:
@@ -91,18 +94,17 @@ def description() -> str:
 def process_args() -> Any:
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--log", default='WARNING')
+    parser.add_argument("--run_count", default=1, type=int)
     parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
                         help=description())
     args = parser.parse_args(sys.argv[1:])
     logging.basicConfig(format='%(levelname)s:%(message)s',
                         level=logging.getLevelName(args.log.upper()))
-    
+    random.seed(time.time())
     return args
 
 
 if __name__ == "__main__":
     args = process_args()
-    start = timeit.default_timer()
-    run(args.log)
-    end = timeit.default_timer()
-    print('{} s. (wall time)'.format(end - start))
+    for _ in range(args.run_count):
+        run(args.log)
