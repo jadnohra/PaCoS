@@ -25,21 +25,7 @@ class FeedProc(Procedure):
 
     def call(self, arg: CallArg, __, proxor: IProcessorAPI) -> CallResult:
         return CallResult(random.randint(0, 5), 
-                          [Call(arg, Address(processor='C', actor='compute'))])
-
-
-class ComputeActor(Actor):
-    def __init__(self):
-        super().__init__('compute', [FwdDataProc()])
-
-
-class FwdDataProc(Procedure):
-    def __init__(self):
-        super().__init__('fwd')
-
-    def call(self, arg: CallArg, _, proxor: IProcessorAPI) -> CallResult:
-        return CallResult(1, [Call(arg, Address(processor='D', actor='sink'))])
-
+                          [Call(arg, Address(processor='C', actor='sink'))])
 
 class SinkActor(Actor):
     def __init__(self):
@@ -64,10 +50,6 @@ def source_B_main(processor: Processor) -> None:
     processor.put_calls([Call('B', Address(actor='source'))])
 
 
-def compute_main(processor: Processor) -> None:
-    processor.add_actor(ComputeActor())
-
-
 def sink_main(processor: Processor) -> None:
     processor.add_actor(SinkActor())
 
@@ -77,8 +59,7 @@ def run(log_lvl: str = 'WARNING'):
     processor_configs = [
         ProcessorConfig(name='A', main=source_A_main, log_level=log_lvl), 
         ProcessorConfig(name='B', main=source_B_main, log_level=log_lvl), 
-        ProcessorConfig(name='C', main=compute_main, log_level=log_lvl),
-        ProcessorConfig(name='D', main=sink_main, log_level=log_lvl)
+        ProcessorConfig(name='C', main=sink_main, log_level=log_lvl)
         ]
     board = Board(processor_configs)
     while not board.any_exited():
