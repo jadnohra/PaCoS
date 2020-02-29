@@ -73,7 +73,7 @@ def sink_main(processor: Processor) -> None:
 
 
 def run(log_lvl: str = 'WARNING'):
-    print('=== timer-race ===')
+    print('=== data-race ===')
     processor_configs = [
         ProcessorConfig(name='A', main=source_A_main, log_level=log_lvl), 
         ProcessorConfig(name='B', main=source_B_main, log_level=log_lvl), 
