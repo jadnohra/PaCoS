@@ -66,6 +66,16 @@ def pong_main(processor: Processor) -> List[Address]:
     
 
 def run(log_lvl: str = 'WARNING'):
+    """
+    The pingpong protocol is race-condition free by design.
+    The only challenge when running it in simulation is that the simulation 
+        hardware may be different.
+    On non-simulation hardware, the pong agent busy waits 4 times, 
+        because the ping calculation takes 5 cycles.
+    This behavior is faithfully reproduced on simulation hardware, 
+     even though the pong simulation hardware is slower than the non-simulated
+     one (emulated using time.sleep).
+    """
     print('=== pingpong-parallel-slow_sim_hw ===')
     processor_configs = [
         ProcessorConfig(name='A', main=ping_main, log_level=log_lvl), 
