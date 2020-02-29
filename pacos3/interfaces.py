@@ -56,7 +56,7 @@ class IProcedure(INamed):
         # ctrl_wait_until(a, t)
         # ctrl_wait_on(a, b)
         # ret next_ctrl_time
-        # fabio ctrl model -> ctrl_wait_until(a, t) (b,t2) from actor call_control
+        # precedency ctrl model -> ctrl_wait_until(a, t) (b,t2) from actor call_control
         # once the time is reached do what?
         #   - if in synch mode -> sim_synch -> block sim
         #   - if in time model mode -> don't block sim, but we used the info not to busy wait
