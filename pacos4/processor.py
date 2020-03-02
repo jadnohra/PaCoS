@@ -80,7 +80,9 @@ class Processor(IProcessor, IProcessorAPI):
         self._token_pool = []
         self._token_queue = []
         self._board_tokens = []
-        self._waiting_proc_addr = None
+        self._wait_address = None
+        self._wait_token = None
+        self._call_stack_token = None
         self._token_queue_rand = config.call_queue_rand
         self._token_source_rand = config.call_source_rand
         if config.log_level:
@@ -155,6 +157,8 @@ class Processor(IProcessor, IProcessorAPI):
 
     def wait(self, wait_on_address: Address, 
              partial_result: CallResult = CallResult()) -> CallResult:
+        self._wait_address = wait_on_address
+        self._wait_token = copy.copy(self._call_stack_token)
         return partial_result
 
     def exit(self, exit_result: CallResult = CallResult()) -> CallResult:
@@ -214,7 +218,9 @@ class Processor(IProcessor, IProcessorAPI):
 
     def do_call(self, address: Address, token: Token) -> None:
         self._call_stack_proc_addr = copy.copy(address)
+        self._call_stack_token = token
         result = self.get_proc(address).call(token.call.arg, token, self.api)
+        self._call_stack_token = None
         self._process_call_result(result, self.get_proc_profile(address))
 
     def _pop_call_queue_token(self, busy_wait_step_count: int = 1) -> None:
@@ -252,9 +258,6 @@ class Processor(IProcessor, IProcessorAPI):
             self._token_pool.pop(i)
 
     def _synch_time(self, target_time: Time) -> None:
-        # We maybe jumping over sources -> need triggers with known time
-        # + busy wait
-        # + jump if nothing is skipped    
         time = self.time
         if target_time <= time:
             return
@@ -278,12 +281,47 @@ class Processor(IProcessor, IProcessorAPI):
                                                 self._step_counter, jump_step))
             self._step_counter = jump_step
 
+    def _end_wait(self) -> None:
+        if self._wait_token:
+            self._wait_token.stamp(self.time)
+            print('XXXXX', self._wait_token.call.arg)
+            self.do_call(self._wait_token.target, self._wait_token)
+            self._wait_token = None
+    
+    def _check_is_waiting(self) -> bool:
+        if self._wait_address is None:
+            return False
+        logging.error('blocked waiting')
+        unblocking_tokens = [x for x in self._token_pool 
+                             if x.target.matches(self._wait_address)]
+        if len(unblocking_tokens) == 0:
+            return True
+        logging.debug('wait unblocked')
+        ready_steps = [self._get_token_ready_step(x) 
+                       for x in unblocking_tokens]
+        ready_step = min(ready_steps)
+        earliest_step = min([self._get_token_ready_step(x) 
+                             for x in self._token_pool])
+        if earliest_step < ready_step:
+            logging.warning('tokens accumulated while waiting')
+        tokens_to_put = [x for x in unblocking_tokens if 
+                         self._get_token_ready_step(x) == ready_step]
+        self._put_tokens(tokens_to_put)
+        self._wait_address = None
+        return False
+
+    def is_waiting(self) -> bool:
+        return self._wait_address is not None            
+
     def has_work(self) -> bool:
         return (len(self._token_pool) + len(self._token_queue) 
                 + len(self._board_tokens)) > 0
 
     def step(self, board_tokens: List[Token]=[]) -> None:
         self._put_tokens(board_tokens)
+        if self._check_is_waiting():
+            return
         self._idle_jump_to_ready_tokens()
         self._enqueue_ready_tokens()
         self._pop_call_queue_token()
+        self._end_wait()

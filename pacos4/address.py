@@ -20,9 +20,13 @@ class Address:
         return address
 
     def equals(self, other: "Address") -> bool:
-        return (self.processor == other.processor
-                and self.actor == other.actor
-                and self.proc == other.proc)
+        return all([getattr(self, attr) == getattr(other, attr) for attr in 
+                    ['processor', 'actor', 'proc']])
+
+    def matches(self, filter_address: "Address") -> bool:
+        return all([(getattr(filter_address, attr) is None 
+                     or (getattr(self, attr) == getattr(filter_address, attr)))
+                    for attr in ['processor', 'actor', 'proc']])
 
     def __repr__(self) -> str:
         return '{}{}{}'.format(self.processor + '.' if self.processor else '', 

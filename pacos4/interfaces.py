@@ -16,10 +16,12 @@ class INamed(ABC):
 
 class ProcessorSnapshot:
     def __init__(self, *,step_count: StepCount = 0, time: Time = 0.0, 
-                 frequency: Time = 0.0, has_exited: bool = False):
+                 frequency: Time = 0.0, has_exited: bool = False,
+                 is_waiting = False):
         self.step_count = step_count
         self.time = time
         self.frequency = frequency
+        self.is_waiting = is_waiting
         self.has_exited = has_exited
 
 
@@ -102,6 +104,10 @@ class IProcessor(IProcessorAPI):
         pass
 
     @abstractmethod
+    def is_waiting(self) -> bool:
+       pass
+
+    @abstractmethod
     def has_work(self) -> bool:
        pass
 
@@ -113,4 +119,5 @@ class IProcessor(IProcessorAPI):
         return ProcessorSnapshot(step_count=self.api.step_count, 
                                  time=self.api.time, 
                                  frequency=self.api.frequency, 
-                                 has_exited=self.has_exited())
+                                 has_exited=self.has_exited(),
+                                 is_waiting=self.is_waiting())
