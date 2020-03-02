@@ -14,13 +14,15 @@ from .ipc import SynchStep, SynchStepResult, SynchExit
 
 class ProcessorConfig:
     def __init__(self, *,
-                main: Callable[['Processor'], List[Address]] = None,
+                main: Callable[['Processor', Any], List[Address]] = None,
+                main_args: Any = None,
                 name: str = None,
                 frequency: float = 1.0*(10**9),
                 call_queue_rand: random.Random = None, 
                 call_source_rand: random.Random = None,
                 log_level: str = 'WARNING'):
         self.main_func = main
+        self.main_args = main_args
         self.frequency = frequency
         self.name = name
         self.call_queue_rand = call_queue_rand
@@ -88,7 +90,10 @@ class Processor(IProcessor, IProcessorAPI):
                                 level=logging.getLevelName(
                                         config.log_level.upper()))
         if config.main_func:
-            config.main_func(self)
+            if config.main_args:
+                config.main_func(self, **config.main_args)
+            else:
+                config.main_func(self)
         self._init_profiles(config)
 
     def _ensure_actor_profile_dict(self, actor_name: str) -> Dict:
@@ -147,6 +152,10 @@ class Processor(IProcessor, IProcessorAPI):
     @property
     def time(self) -> Time:
         return self.steps_to_time(self._step_counter)
+
+    def wait(self, wait_on_address: Address, 
+             partial_result: CallResult = CallResult()) -> CallResult:
+        return partial_result
 
     def exit(self, exit_result: CallResult = CallResult()) -> CallResult:
         self._has_exited = True
@@ -208,14 +217,14 @@ class Processor(IProcessor, IProcessorAPI):
         result = self.get_proc(address).call(token.call.arg, token, self.api)
         self._process_call_result(result, self.get_proc_profile(address))
 
-    def _pop_call_queue_token(self, enable_busy_wait=True) -> None:
+    def _pop_call_queue_token(self, busy_wait_step_count: int = 1) -> None:
         if len(self._token_queue) != 0:
             token = self._token_queue.pop()
             self.do_call(token.target, token)
         else:
-            if enable_busy_wait:
+            if busy_wait_step_count > 0:
                 logging.info('busy wait')
-                self._step_counter = self._step_counter + 1
+                self._step_counter = self._step_counter + busy_wait_step_count
 
     def _is_token_ready(self, token: Token) -> bool:
         time_ready = (token.call.call_time is None 

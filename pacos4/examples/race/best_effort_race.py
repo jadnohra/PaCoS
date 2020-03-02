@@ -49,7 +49,7 @@ class DoubleFeedProc(Procedure):
 
 
 class ComputeActor(Actor):
-    def __init__(self):
+    def __init__(self, tackon_synch: bool = False):
         super().__init__('compute', [Data1Proc(self), Data2Proc(self)])
         self.accum = []
 
@@ -62,9 +62,10 @@ class Data1Proc(Procedure):
 
     def call(self, arg: CallArg, __, proxor: IProcessorAPI) -> CallResult:
         result = [arg, self._actor.accum]
-        if self._use_protocol:
+        if False and self._use_protocol:
             if len (self._actor.accum) < 2:
-                return proxor.wait()
+                logging.warning('active protocol synch.')
+                return proxor.wait(Address(proc='data2'))
             elif len (self._actor.accum) >= 4:
                 logging.error('PROTOCOL ERROR')
                 return proxor.exit()
@@ -120,18 +121,20 @@ def source_B_main(processor: Processor) -> None:
     processor.put_calls([Call(None, Address(actor='source'))])
 
 
-def compute_main(processor: Processor) -> None:
-    processor.add_actor(ComputeActor())
+def compute_main(processor: Processor, tackon_synch: bool) -> None:
+    processor.add_actor(ComputeActor(tackon_synch))
 
 
 def sink_main(processor: Processor) -> None:
     processor.add_actor(SinkActor())
 
-def create_board(log_lvl: str = 'WARNING', profile_name='default') -> Board:
+def create_board(log_lvl: str = 'WARNING', profile_name='default', 
+                 tackon_synch: bool = False) -> Board:
     processor_configs = [
         ProcessorConfig(name='A', main=source_A_main, log_level=log_lvl), 
         ProcessorConfig(name='B', main=source_B_main, log_level=log_lvl), 
-        ProcessorConfig(name='C', main=compute_main, log_level=log_lvl), 
+        ProcessorConfig(name='C', main=compute_main, log_level=log_lvl,
+                        main_args={'tackon_synch':tackon_synch}), 
         ProcessorConfig(name='D', main=sink_main, log_level=log_lvl)
         ]
     my_dir = os.path.dirname(__file__)
@@ -140,9 +143,10 @@ def create_board(log_lvl: str = 'WARNING', profile_name='default') -> Board:
                  profile_name=profile_name)
 
 
-def run(log_lvl: str = 'WARNING', sim_time = 5.0, profile_name='default'):
+def run(log_lvl: str = 'WARNING', sim_time = 5.0, profile_name='default',
+        tackon_synch: bool = False):
     print('=== best-effort-race ===')
-    board = create_board(log_lvl, profile_name)
+    board = create_board(log_lvl, profile_name, tackon_synch)
     start = timeit.default_timer()
     while not board.any_exited():
         board.step()
@@ -164,6 +168,7 @@ def process_args() -> Any:
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--log", default='WARNING')
     parser.add_argument("--run_count", default=1, type=int)
+    parser.add_argument("--tackon_synch", default=False, type=bool)
     parser.add_argument("-p", "--profile_name", default='default')
     parser.add_argument("--sim_time", default=5, type=int)
     parser.add_argument('-h', '--help', action='help', 
@@ -179,7 +184,7 @@ def process_args() -> Any:
 def main():
     args = process_args()
     for _ in range(args.run_count):
-        run(args.log, args.sim_time, args.profile_name)
+        run(args.log, args.sim_time, args.profile_name, args.tackon_synch)
 
 
 if __name__ == "__main__":
