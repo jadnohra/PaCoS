@@ -135,7 +135,7 @@ def create_board(log_lvl: str = 'WARNING') -> Board:
 
 
 def run(log_lvl: str = 'WARNING', sim_time = 5.0):
-    print('=== data-race ===')
+    print('=== best-effort-race ===')
     board = create_board(log_lvl)
     start = timeit.default_timer()
     while not board.any_exited():
@@ -150,7 +150,7 @@ def run(log_lvl: str = 'WARNING', sim_time = 5.0):
 def description() -> str:
     return \
     """
-    An implcitly time-sychronized computation.
+    An implcitly time-sychronized best-effort computation.
     """
 
 
