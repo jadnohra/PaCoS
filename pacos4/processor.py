@@ -168,12 +168,6 @@ class Processor(IProcessor, IProcessorAPI):
         tokens = [Token(call).stamp(time) for call in result.calls]
         self._put_tokens(tokens)
 
-    def wait(self, partial_result: CallResult = CallResult()) -> CallResult:
-        if not self._is_proc_ready(self.get_proc(self._call_stack_proc_addr)):
-            logging.error('wait issued from blocked proc, will deadlock')
-        self._waiting_proc_addr = self._call_stack_proc_addr
-        return partial_result
-
     def do_call(self, address: Address, token: Token) -> None:
         self._call_stack_proc_addr = copy.copy(address)
         result = self.get_proc(address).call(token.call.arg, token, self.api)
@@ -194,6 +188,13 @@ class Processor(IProcessor, IProcessorAPI):
         step_ready = (token.call.call_step is None 
                       or token.call.call_step <= self.step_count)
         return time_ready and step_ready
+    
+    def _get_token_ready_step(self, token: Token) -> StepCount:
+        if token.call.call_step is not None:
+            return token.call.call_step
+        if token.call.call_time is not None:
+            return self.time_to_steps(token.call.call_time)
+        return 0
 
     def _enqueue_ready_tokens(self) -> None:
         ready_indices = [i for i, token in enumerate(self._token_pool)
@@ -216,19 +217,22 @@ class Processor(IProcessor, IProcessorAPI):
         step_count_diff = self.time_to_steps(target_time - time)
         self._step_counter = self._step_counter + step_count_diff
 
-    def _unblock_waiting(self) -> bool:
-        if self._waiting_proc_addr is None:
-            return True
-        compat_token_idx = next((i for i, x in enumerate(self._token_pool)
-                                 if x.target.equals(self._waiting_proc_addr)), 
-                                -1) 
-        if compat_token_idx == -1:
-            return False
-        unblock_token = self._token_pool.pop(compat_token_idx)
-        self._token_queue.append(unblock_token)
-        self._synch_time(unblock_token.last_time)
-        self._waiting_proc_addr = None
-        return True
+    def _idle_jump_to_ready_tokens(self) -> None:
+        if len(self._token_queue):
+            return
+        ready_tokens = [token for token in self._token_pool 
+                        if self._is_token_ready(token)]
+        if len(ready_tokens):
+            return
+        ready_steps =  [self._get_token_ready_step(token) 
+                        for token in self._token_pool]
+        if len(ready_steps) == 0:
+            return
+        jump_step = min(ready_steps)
+        if jump_step > self._step_counter:
+            logging.info('idle jump {} -> {}'.format(
+                                                self._step_counter, jump_step))
+            self._step_counter = jump_step
 
     def has_work(self) -> bool:
         return (len(self._token_pool) + len(self._token_queue) 
@@ -236,7 +240,6 @@ class Processor(IProcessor, IProcessorAPI):
 
     def step(self, board_tokens: List[Token]=[]) -> None:
         self._put_tokens(board_tokens)
-        if not self._unblock_waiting():
-            return
+        self._idle_jump_to_ready_tokens()
         self._enqueue_ready_tokens()
         self._pop_call_queue_token()

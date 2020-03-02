@@ -28,9 +28,11 @@ class IProcessorAPI(INamed):
     def time(self) -> Time:
         pass
 
+    '''
     @abstractmethod
     def wait(self, partial_result: CallResult = CallResult()) -> CallResult:
         pass
+    '''
 
     @abstractmethod
     def exit(self, exit_result: CallResult = CallResult()) -> CallResult:

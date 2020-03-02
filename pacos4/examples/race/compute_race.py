@@ -27,7 +27,7 @@ class FeedProc(Procedure):
         my_step_count = 1
         return CallResult(my_step_count, 
                           [Call(arg+1, Address(actor='source', proc='feed'), 
-                                call_step=proxor.step_count+my_step_count+2),
+                                call_step=proxor.step_count+my_step_count+10),
                            Call(arg, Address(processor='C', actor='compute', 
                                              proc='data1'))])
 
@@ -42,7 +42,7 @@ class DoubleFeedProc(Procedure):
         super().__init__('feed')
 
     def call(self, arg: CallArg, __, proxor: IProcessorAPI) -> CallResult:
-        return CallResult(1, 
+        return CallResult(random.randint(2, 8), 
                           [Call(None, Address(actor='source', proc='feed')),
                            Call(1, Address(processor='C', actor='compute',
                                            proc='data2'))])
@@ -121,12 +121,16 @@ def create_board(log_lvl: str = 'WARNING') -> Board:
     return Board(processor_configs)
 
 
-def run(log_lvl: str = 'WARNING'):
+def run(log_lvl: str = 'WARNING', sim_time = 5.0):
     print('=== data-race ===')
     board = create_board(log_lvl)
+    start = timeit.default_timer()
     while not board.any_exited():
         board.step()
-        time.sleep(0.5)  # slow down the simulation artificially
+        time.sleep(0.05)  # slow down the simulation artificially
+        curr = timeit.default_timer()
+        if sim_time is not None and curr - start > sim_time:
+            break
     board.exit()
 
 
@@ -141,6 +145,7 @@ def process_args() -> Any:
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--log", default='WARNING')
     parser.add_argument("--run_count", default=1, type=int)
+    parser.add_argument("--sim_time", default=5, type=int)
     parser.add_argument('-h', '--help', action='help', 
                         default=argparse.SUPPRESS,
                         help=description())
@@ -154,7 +159,7 @@ def process_args() -> Any:
 def main():
     args = process_args()
     for _ in range(args.run_count):
-        run(args.log)
+        run(args.log, args.sim_time)
 
 
 if __name__ == "__main__":
