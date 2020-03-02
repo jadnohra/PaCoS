@@ -43,8 +43,7 @@ class DoubleFeedProc(Procedure):
         super().__init__('feed')
 
     def call(self, arg: CallArg, __, proxor: IProcessorAPI) -> CallResult:
-        my_step_count = random.randint(2, 8)
-        return CallResult(my_step_count, 
+        return CallResult(4, 
                           [Call(None, Address(actor='source', proc='feed')),
                            Call(1, Address(processor='C', actor='compute',
                                            proc='data2'))])
@@ -162,7 +161,7 @@ def process_args() -> Any:
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--log", default='WARNING')
     parser.add_argument("--run_count", default=1, type=int)
-    parser.add_argument("--profile_name", default='default')
+    parser.add_argument("-p", "--profile_name", default='default')
     parser.add_argument("--sim_time", default=5, type=int)
     parser.add_argument('-h', '--help', action='help', 
                         default=argparse.SUPPRESS,

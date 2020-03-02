@@ -12,11 +12,11 @@ class Address:
         address = Address()
         parts = expression.split('.')
         if len(parts) > 0:
-            address.proc = parts[0]
+            address.proc = parts[-1]
         if len(parts) > 1:
-            address.actor = parts[1]
+            address.actor = parts[-2]
         if len(parts) > 2:
-            address.processor = parts[2]
+            address.processor = parts[-3]
         return address
 
     def equals(self, other: "Address") -> bool:

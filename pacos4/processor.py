@@ -1,7 +1,7 @@
 import copy
 import multiprocessing
 import logging
-from random import Random
+import random
 from abc import ABC, abstractmethod
 from operator import attrgetter
 from typing import List, Any, Callable, Dict
@@ -17,8 +17,8 @@ class ProcessorConfig:
                 main: Callable[['Processor'], List[Address]] = None,
                 name: str = None,
                 frequency: float = 1.0*(10**9),
-                call_queue_rand: Random = None, 
-                call_source_rand: Random = None,
+                call_queue_rand: random.Random = None, 
+                call_source_rand: random.Random = None,
                 log_level: str = 'WARNING'):
         self.main_func = main
         self.frequency = frequency
@@ -56,11 +56,14 @@ class ProcessorIPC:
 
 
 class ProcedureProfile:
-    def __init__(self, expression: str):
-        pass
+    def __init__(self, step_count_range: Any):
+        self._step_count_range = step_count_range
 
     def get_call_step_count(self, default_step_count: int) -> int:
-        return default_step_count
+        if isinstance(self._step_count_range, list):
+            return random.randint(self._step_count_range[0], 
+                                  self._step_count_range[1])
+        return int(self._step_count_range)
 
 
 class Processor(IProcessor, IProcessorAPI):
@@ -86,7 +89,20 @@ class Processor(IProcessor, IProcessorAPI):
                                         config.log_level.upper()))
         if config.main_func:
             config.main_func(self)
+        self._init_profiles(config)
 
+    def _ensure_actor_profile_dict(self, actor_name: str) -> Dict:
+            if actor_name in self._actor_profile_dict:
+                return self._actor_profile_dict[actor_name]
+            self._actor_profile_dict[actor_name] = {}
+            return self._ensure_actor_profile_dict(actor_name)
+
+    def _init_profiles(self, config: ProcessorConfig):
+        self._actor_profile_dict = {}
+        for k, v in config.profile_dict.items():
+            addr = Address.create_from_expression(k)
+            proc_profile_dict = self._ensure_actor_profile_dict(addr.actor)
+            proc_profile_dict[addr.proc] = ProcedureProfile(v)
 
     @staticmethod
     def mp_create(config: ProcessorConfig, mp_context: Any, 
@@ -172,8 +188,11 @@ class Processor(IProcessor, IProcessorAPI):
         return self.get_actor(address.actor).get_procedure(address.proc)
     
     def get_proc_profile(self, address: Address) -> ProcedureProfile:
-        #return self.get_actor(address.actor).get_procedure(address.proc)
-        pass
+        if address.actor in self._actor_profile_dict:
+            proc_profile_dict = self._actor_profile_dict[address.actor]
+            if address.proc in proc_profile_dict:
+                return proc_profile_dict[address.proc]
+        return None
 
     def _process_call_result(self, result: CallResult, 
                              proc_profile: ProcedureProfile = None) -> None:
