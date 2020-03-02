@@ -51,7 +51,7 @@ class DoubleFeedProc(Procedure):
 class ComputeActor(Actor):
     def __init__(self):
         super().__init__('compute', [Data1Proc(self), Data2Proc(self)])
-        self.accum = ''
+        self.accum = []
 
 
 class Data1Proc(Procedure):
@@ -60,8 +60,8 @@ class Data1Proc(Procedure):
         self._actor = actor
 
     def call(self, arg: CallArg, __, proxor: IProcessorAPI) -> CallResult:
-        result = '{}*({})'.format(arg, self._actor.accum)
-        self._actor.accum = ''
+        result = [arg, self._actor.accum]
+        self._actor.accum = []
         return CallResult(1, 
                           [Call(result, Address(processor='D', actor='sink'))])
 
@@ -72,10 +72,7 @@ class Data2Proc(Procedure):
         self._actor = actor
 
     def call(self, arg: CallArg, __, proxor: IProcessorAPI) -> CallResult:
-        if self._actor.accum:
-            self._actor.accum = '{} + {}'.format(self._actor.accum, arg)
-        else:
-            self._actor.accum = arg
+        self._actor.accum.append(arg)
         return CallResult()
 
 
@@ -89,14 +86,12 @@ class ConsumeProc(Procedure):
         super().__init__('consume')
 
     @staticmethod
-    def check_data_status(value: str) -> str:
-        if len(value.split('*')) != 2:
-            return False
-        a, b = value.split('*')
-        if a =='0' and b == '()':
+    def check_data_status(arg: Any) -> str:
+        if len(arg) != 2:
+            return 'PANIC'
+        if arg[0] == 0 and len(arg[1]) == 0:
             return 'INIT'
-        op_count = len(b.split('+'))
-        if  op_count >= 2 and op_count <= 3:
+        if len(arg[1]) >= 2 and len(arg[1]) <= 3:
             return 'HEALTHY'
         return 'DEGRADED'
 
