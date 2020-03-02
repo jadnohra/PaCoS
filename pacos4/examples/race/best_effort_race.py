@@ -25,10 +25,9 @@ class FeedProc(Procedure):
         super().__init__('feed')
 
     def call(self, arg: CallArg, __, proxor: IProcessorAPI) -> CallResult:
-        my_step_count = 1
-        return CallResult(my_step_count, 
+        return CallResult(1, 
                           [Call(arg+1, Address(actor='source', proc='feed'), 
-                                call_step=proxor.step_count+my_step_count+10),
+                                call_step=proxor.step_count+10),
                            Call(arg, Address(processor='C', actor='compute', 
                                              proc='data1'))])
 
@@ -90,17 +89,19 @@ class ConsumeProc(Procedure):
         super().__init__('consume')
 
     @staticmethod
-    def check_ok(value: str) -> bool:
+    def check_data_status(value: str) -> str:
         if len(value.split('*')) != 2:
             return False
         a, b = value.split('*')
-        if a =='0':
-            return b == '()'
+        if a =='0' and b == '()':
+            return 'INIT'
         op_count = len(b.split('+'))
-        return  op_count >= 2 and op_count <= 3
+        if  op_count >= 2 and op_count <= 3:
+            return 'HEALTHY'
+        return 'DEGRADED'
 
     def call(self, arg: CallArg, __, proxor: IProcessorAPI) -> CallResult:
-        value_status = 'OK' if self.check_ok(arg) else 'INVALID'
+        value_status = self.check_data_status(arg)
         logging.warning('Sink received value: {} : {}'.format(arg, 
                                                               value_status))
         return CallResult()
