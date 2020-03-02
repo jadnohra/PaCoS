@@ -94,6 +94,9 @@ class IProcessor(IProcessorAPI):
     @abstractmethod
     def step(self, board_tokens: List[Token]=[]) -> None:
         pass
+    
+    def load_profile(self, json_object: Any) -> None:
+        pass
 
     @abstractproperty
     def api(self) -> IProcessorAPI:

@@ -26,6 +26,7 @@ class ProcessorConfig:
         self.call_queue_rand = call_queue_rand
         self.call_source_rand = call_source_rand
         self.log_level = log_level
+        self.profile_dict = {}
 
 
 class ProcessorIPC:
