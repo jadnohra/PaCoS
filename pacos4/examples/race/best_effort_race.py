@@ -62,7 +62,7 @@ class Data1Proc(Procedure):
 
     def call(self, arg: CallArg, __, proxor: IProcessorAPI) -> CallResult:
         result = [arg, self._actor.accum]
-        if False and self._use_protocol:
+        if self._use_protocol:
             if len (self._actor.accum) < 2:
                 logging.warning('active protocol synch.')
                 return proxor.wait(Address(proc='data2'))
