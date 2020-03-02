@@ -54,6 +54,14 @@ class ProcessorIPC:
         return self._name
 
 
+class ProcedureProfile:
+    def __init__(self, expression: str):
+        pass
+
+    def get_call_step_count(self, default_step_count: int) -> int:
+        return default_step_count
+
+
 class Processor(IProcessor, IProcessorAPI):
     def __init__(self, config: ProcessorConfig = ProcessorConfig(), 
                  log_pid: bool = False):
@@ -161,9 +169,16 @@ class Processor(IProcessor, IProcessorAPI):
 
     def get_proc(self, address: Address) -> IProcedure:
         return self.get_actor(address.actor).get_procedure(address.proc)
+    
+    def get_proc_profile(self, address: Address) -> ProcedureProfile:
+        #return self.get_actor(address.actor).get_procedure(address.proc)
+        pass
 
-    def _process_call_result(self, result: CallResult) -> None:
-        self._step_counter = self._step_counter + max(1, result.step_count)
+    def _process_call_result(self, result: CallResult, 
+                             proc_profile: ProcedureProfile = None) -> None:
+        step_count = (proc_profile.get_call_step_count(result.step_count)
+                      if proc_profile else result.step_count)
+        self._step_counter = self._step_counter + max(1, step_count)
         time = self.time
         tokens = [Token(call).stamp(time) for call in result.calls]
         self._put_tokens(tokens)
@@ -171,7 +186,7 @@ class Processor(IProcessor, IProcessorAPI):
     def do_call(self, address: Address, token: Token) -> None:
         self._call_stack_proc_addr = copy.copy(address)
         result = self.get_proc(address).call(token.call.arg, token, self.api)
-        self._process_call_result(result)
+        self._process_call_result(result, self.get_proc_profile(address))
 
     def _pop_call_queue_token(self, enable_busy_wait=True) -> None:
         if len(self._token_queue) != 0:

@@ -1,0 +1,10 @@
+{
+    "fixed": 
+    {
+        "B.source.feed" : "4"
+    },
+    "random": 
+    {
+        "B.source.feed" : "2-8"
+    }
+}
