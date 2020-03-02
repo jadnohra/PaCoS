@@ -20,8 +20,7 @@ class Board:
                  *, 
                  time_precision: TimeInterval = None,
                  freq_precision: TimeInterval = 0.1,
-                 profile_filepath: str = None,
-                 profile_name: str = None):
+                 profile_filepath: str = None):
         mp_context = multiprocessing.get_context('spawn')
         if time_precision is None:
             avg_freq = statistics.mean([x.frequency 
@@ -29,21 +28,18 @@ class Board:
             self._time_precision = freq_precision * 1.0 / avg_freq
         else:
             self._time_precision = time_precision
-        if profile_filepath and profile_name:
-            self._configure_profiles(profile_filepath, processor_configs,
-                                     profile_name)
+        if profile_filepath:
+            self._configure_profiles(profile_filepath, processor_configs)
         self._proc_states = [self.ProcessState(config, mp_context) 
                              for config in processor_configs]
         self._name_idx_dict = {processor_configs[i].name: i 
                                for i in range(len(processor_configs))}
 
     def _configure_profiles(self, filepath: str, 
-                                processor_configs: List[ProcessorConfig],
-                                profile_name: str = 'default') -> None:
+                            processor_configs: List[ProcessorConfig]) -> None:
         profile_data = {}
         with open(filepath) as json_file:
             profile_data = json.load(json_file)
-        profile_data = profile_data[profile_name]
         name_idx_dict = {processor_configs[i].name: i 
                         for i in range(len(processor_configs))}
         for k, v in profile_data.items():

@@ -30,7 +30,7 @@ class CountProc(Procedure):
         logging.warning('time: {}, count: {}'.format(
                         repr_time(proxor.time), count))
         time.sleep(0.3)
-        return CallResult(1, [Call(count + 1, self._target)])
+        return CallResult([Call(count + 1, self._target)])
 
 
 def actor_A_main(processor: Processor) -> None:

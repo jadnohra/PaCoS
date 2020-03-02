@@ -24,8 +24,7 @@ class FeedProc(Procedure):
         super().__init__('feed')
 
     def call(self, arg: CallArg, __, proxor: IProcessorAPI) -> CallResult:
-        return CallResult(1, 
-                          [Call(arg+1, Address(actor='source', proc='feed')),
+        return CallResult([Call(arg+1, Address(actor='source', proc='feed')),
                            Call(arg, Address(processor='B', actor='sink'))])
 
 

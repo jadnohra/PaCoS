@@ -24,8 +24,8 @@ class FeedProc(Procedure):
         super().__init__('feed')
 
     def call(self, arg: CallArg, __, proxor: IProcessorAPI) -> CallResult:
-        return CallResult(random.randint(0, 5), 
-                          [Call(arg, Address(processor='C', actor='sink'))])
+        return CallResult([Call(arg, Address(processor='C', actor='sink'))],
+                          random.randint(0, 5))
 
 class SinkActor(Actor):
     def __init__(self):

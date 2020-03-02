@@ -25,8 +25,7 @@ class FeedProc(Procedure):
         super().__init__('feed')
 
     def call(self, arg: CallArg, __, proxor: IProcessorAPI) -> CallResult:
-        return CallResult(1, 
-                          [Call(arg+1, Address(actor='source', proc='feed'), 
+        return CallResult([Call(arg+1, Address(actor='source', proc='feed'), 
                                 call_step=proxor.step_count+10),
                            Call(arg, Address(processor='C', actor='compute', 
                                              proc='data1'))])
@@ -42,10 +41,10 @@ class DoubleFeedProc(Procedure):
         super().__init__('feed')
 
     def call(self, arg: CallArg, __, proxor: IProcessorAPI) -> CallResult:
-        return CallResult(4, 
-                          [Call(None, Address(actor='source', proc='feed')),
+        return CallResult([Call(None, Address(actor='source', proc='feed')),
                            Call(1, Address(processor='C', actor='compute',
-                                           proc='data2'))])
+                                           proc='data2'))],
+                          4)
 
 
 class ComputeActor(Actor):
@@ -70,8 +69,7 @@ class Data1Proc(Procedure):
                 logging.error('PROTOCOL ERROR')
                 return proxor.exit()
         self._actor.accum = []
-        return CallResult(1, 
-                          [Call(result, Address(processor='D', actor='sink'))])
+        return CallResult([Call(result, Address(processor='D', actor='sink'))])
 
 
 class Data2Proc(Procedure):
@@ -108,7 +106,6 @@ class ConsumeProc(Procedure):
         logging.warning('Sink received value: {} : {}'.format(arg, 
                                                               value_status))
         return CallResult()
-        #return proxor.exit()
 
 
 def source_A_main(processor: Processor) -> None:
@@ -128,7 +125,7 @@ def compute_main(processor: Processor, tackon_synch: bool) -> None:
 def sink_main(processor: Processor) -> None:
     processor.add_actor(SinkActor())
 
-def create_board(log_lvl: str = 'WARNING', profile_name='default', 
+def create_board(log_lvl: str = 'WARNING', profile=None, 
                  tackon_synch: bool = False) -> Board:
     processor_configs = [
         ProcessorConfig(name='A', main=source_A_main, log_level=log_lvl), 
@@ -137,16 +134,14 @@ def create_board(log_lvl: str = 'WARNING', profile_name='default',
                         main_args={'tackon_synch':tackon_synch}), 
         ProcessorConfig(name='D', main=sink_main, log_level=log_lvl)
         ]
-    my_dir = os.path.dirname(__file__)
-    profile_filepath = os.path.join(my_dir, 'best_effort_race_profiles.json')
-    return Board(processor_configs, profile_filepath=profile_filepath,
-                 profile_name=profile_name)
+    
+    return Board(processor_configs, profile_filepath=profile)
 
 
-def run(log_lvl: str = 'WARNING', sim_time = 5.0, profile_name='default',
+def run(log_lvl: str = 'WARNING', sim_time = 5.0, profile = None,
         tackon_synch: bool = False):
     print('=== best-effort-race ===')
-    board = create_board(log_lvl, profile_name, tackon_synch)
+    board = create_board(log_lvl, profile, tackon_synch)
     start = timeit.default_timer()
     while not board.any_exited():
         board.step()
@@ -169,7 +164,7 @@ def process_args() -> Any:
     parser.add_argument("--log", default='WARNING')
     parser.add_argument("--run_count", default=1, type=int)
     parser.add_argument("--tackon_synch", default=False, type=bool)
-    parser.add_argument("-p", "--profile_name", default='default')
+    parser.add_argument("-p", "--profile", default=None)
     parser.add_argument("--sim_time", default=5, type=int)
     parser.add_argument('-h', '--help', action='help', 
                         default=argparse.SUPPRESS,
@@ -183,8 +178,11 @@ def process_args() -> Any:
 
 def main():
     args = process_args()
+    if args.profile is None:
+        my_dir = os.path.dirname(__file__)
+        args.profile = os.path.join(my_dir, 'best_effort_race_random.json')
     for _ in range(args.run_count):
-        run(args.log, args.sim_time, args.profile_name, args.tackon_synch)
+        run(args.log, args.sim_time, args.profile, args.tackon_synch)
 
 
 if __name__ == "__main__":

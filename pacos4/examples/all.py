@@ -7,7 +7,6 @@ from .parallel_count import main as main_parallel_count
 from .race.timer_race import main as main_timer_race
 from .race.data_race import main as main_data_race
 from .race.best_effort_race import main as main_best_effort_race
-#from .race.data_race_tackon import main as main_data_race_tackon
 
 
 if __name__ == "__main__":

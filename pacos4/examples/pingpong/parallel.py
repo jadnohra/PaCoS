@@ -28,7 +28,7 @@ class PingTriggerProc(Procedure):
         logging.warning('PING - time: {}, pings_left: {}'.format(
                         repr_time(proxor.time), self._actor._pings_left))
         self._actor._pings_left = self._actor._pings_left - 1
-        return CallResult(1, [self.create_call()])
+        return CallResult([self.create_call()])
     
     @staticmethod
     def create_call() -> Token:
@@ -42,7 +42,7 @@ class PongTriggerProc(Procedure):
     def call(self, arg: CallArg, _,  proxor: IProcessorAPI) -> CallResult:
         logging.warning('PONG - time: {}, pong'.format(repr_time(proxor.time)))
         out_call = Call(arg, Address(processor='A', actor='ping'))
-        return CallResult(1, [out_call])
+        return CallResult([out_call])
 
 
 class PongActor(Actor):

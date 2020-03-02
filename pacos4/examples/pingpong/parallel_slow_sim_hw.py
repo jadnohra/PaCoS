@@ -29,7 +29,7 @@ class PingTriggerProc(Procedure):
         logging.warning('PING - time: {}, pings_left: {}'.format(
                         repr_time(proxor.time), self._actor._pings_left))
         self._actor._pings_left = self._actor._pings_left - 1
-        return CallResult(5, [self.create_call()])
+        return CallResult([self.create_call()], 5)
         
     @staticmethod
     def create_call() -> Token:
@@ -46,7 +46,7 @@ class PongTriggerProc(Procedure):
         # hardware of the pong agent is very slow (due to the sleep below)
         time.sleep(0.2)
         out_call = Call(arg, Address(processor='A', actor='ping'))
-        return CallResult(1, [out_call])
+        return CallResult([out_call])
 
 
 class PongActor(Actor):

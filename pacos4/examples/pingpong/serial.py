@@ -26,7 +26,7 @@ class PingTriggerProc(Procedure):
         logging.warning('step: {}, pings_left: {}'.format(
                             proxor.step_count, self._actor._pings_left))
         self._actor._pings_left = self._actor._pings_left - 1
-        return CallResult(1, [self.create_call()])
+        return CallResult([self.create_call()])
         
     @staticmethod
     def create_call() -> Call:
@@ -38,7 +38,7 @@ class PongTriggerProc(Procedure):
         super().__init__('trigger')
 
     def call(self, arg: CallArg, _, __) -> CallResult:
-        return CallResult(1, [Call(arg, Address(actor='ping'))])
+        return CallResult([Call(arg, Address(actor='ping'))])
 
 
 class PongActor(Actor):

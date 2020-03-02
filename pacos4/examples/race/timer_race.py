@@ -36,8 +36,8 @@ class TimerSendProc(Procedure):
         self._actor = actor
 
     def call(self, arg: CallArg, _, proxor: IProcessorAPI) -> CallResult:
-        return CallResult(1, [Call(self._actor._value, 
-                              Address(processor='C', actor='sink'))])
+        return CallResult([Call(self._actor._value, 
+                                Address(processor='C', actor='sink'))])
 
 
 class SinkActor(Actor):

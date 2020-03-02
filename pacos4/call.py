@@ -19,6 +19,6 @@ class Call:
 
 
 class CallResult:
-    def __init__(self, step_count: StepCount = 0, calls: List[Call] = []):
-        self.step_count = step_count
+    def __init__(self, calls: List[Call] = [], step_count: StepCount = 1):
         self.calls = calls
+        self.step_count = step_count
