@@ -42,7 +42,8 @@ class DoubleFeedProc(Procedure):
         super().__init__('feed')
 
     def call(self, arg: CallArg, __, proxor: IProcessorAPI) -> CallResult:
-        return CallResult(random.randint(2, 8), 
+        my_step_count = random.randint(2, 8)
+        return CallResult(my_step_count, 
                           [Call(None, Address(actor='source', proc='feed')),
                            Call(1, Address(processor='C', actor='compute',
                                            proc='data2'))])
@@ -88,8 +89,20 @@ class ConsumeProc(Procedure):
     def __init__(self):
         super().__init__('consume')
 
+    @staticmethod
+    def check_ok(value: str) -> bool:
+        if len(value.split('*')) != 2:
+            return False
+        a, b = value.split('*')
+        if a =='0':
+            return b == '()'
+        op_count = len(b.split('+'))
+        return  op_count >= 2 and op_count <= 3
+
     def call(self, arg: CallArg, __, proxor: IProcessorAPI) -> CallResult:
-        logging.warning('Sink received value: {}'.format(arg))
+        value_status = 'OK' if self.check_ok(arg) else 'INVALID'
+        logging.warning('Sink received value: {} : {}'.format(arg, 
+                                                              value_status))
         return CallResult()
         #return proxor.exit()
 
