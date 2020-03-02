@@ -55,12 +55,19 @@ class ComputeActor(Actor):
 
 
 class Data1Proc(Procedure):
-    def __init__(self, actor: ComputeActor):
+    def __init__(self, actor: ComputeActor, use_protocol: bool = False):
         super().__init__('data1')
         self._actor = actor
+        self._use_protocol = use_protocol
 
     def call(self, arg: CallArg, __, proxor: IProcessorAPI) -> CallResult:
         result = [arg, self._actor.accum]
+        if self._use_protocol:
+            if len (self._actor.accum) < 2:
+                return proxor.wait()
+            elif len (self._actor.accum) >= 4:
+                logging.error('PROTOCOL ERROR')
+                return proxor.exit()
         self._actor.accum = []
         return CallResult(1, 
                           [Call(result, Address(processor='D', actor='sink'))])
@@ -139,7 +146,7 @@ def run(log_lvl: str = 'WARNING', sim_time = 5.0, profile_name='default'):
     start = timeit.default_timer()
     while not board.any_exited():
         board.step()
-        time.sleep(0.05)  # slow down the simulation artificially
+        time.sleep(0.03)  # slow down the simulation artificially
         curr = timeit.default_timer()
         if sim_time is not None and curr - start > sim_time:
             break
