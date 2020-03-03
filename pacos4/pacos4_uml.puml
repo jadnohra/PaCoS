@@ -1,0 +1,105 @@
+@startuml
+
+class IProcessorAPI {
+    {abstract} time : Time
+    {abstract} step_count : StepCount
+    {abstract} frequency : float
+    {abstract} void exit()
+    {abstract} void put_calls(List[Call])
+}
+
+class Call {
+    arg: CallArg
+    target: Address
+    {optional} call_time: Time
+    {optional} call_step: StepCount
+}
+
+class CallResult {
+    calls: List[Call]
+    {optional} step_count: StepCount
+}
+
+class Token {
+    call: Call
+    stamps: List[Time, Address]
+    Time emission_time()
+    Time last_time()
+    Time wire_time()
+    void stamp(Time)
+}
+
+'CallResult -- IProcedure : < uses'
+'Token -- IProcedure : < uses'
+'IProcessorAPI -- IProcedure : < uses'
+
+class IProcedure {
+    {abstract} CallResult call(CallArg, Token, IProcAPI)
+}
+
+
+class IActor {
+    {abstract} List[IProcedure] procedures()
+    {abstract} IProcedure get_procedures(name: str)
+}
+
+class IProcessor {
+    {abstract} void step(board_tokens: List[Token])
+    {abstract} void load_profile(json_object)
+    {abstract} IProcessorAPI api()
+    {abstract} bool has_work()
+    {abstract} bool has_exited()
+    {abstract} bool has_exited()
+    ProcessorSnapshot snap()
+}
+
+class ProcessorIPC {
+    void start()
+    void join()
+    void send_step(board_tokens: List[Token])
+    void send_exit()
+    Any recv_step_result()
+    name: str
+}
+
+
+class Processor {
+   str name()
+   void exit()
+   void put_calls(calls: List[Call])
+   void add_actor(actor: IActor)
+   IActor get_actor(actor_name: str)
+   __ multiprocessing __
+   {static} ProcessorIPC mp_create(config: ProcessorConfig, mp_content: mp.Context, create_paused: bool)
+}
+
+Processor --> ProcessorConfig
+Processor --> ProcessorIPC
+Processor ..> IProcessor
+IProcessor *--> IProcessorAPI
+
+class ProcessorConfig {
+    Callable[Processor, Any] main_func
+    Any main_args
+    float frequency
+    str name
+    Random call_queue_rand
+    Random call_source_rand
+    str log_level
+    Dict profile_dict
+}
+
+class Board {
+    List[Time] step()
+    bool all_exited()
+    bool any_exited()
+    bool has_tokens()
+    bool all_idle()
+    bool any_idle()
+    void exit(join: bool)
+}
+
+Board --> ProcessorIPC
+Board --> ProcessorConfig
+
+@enduml

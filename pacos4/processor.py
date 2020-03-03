@@ -20,6 +20,7 @@ class ProcessorConfig:
                 frequency: float = 1.0*(10**9),
                 call_queue_rand: random.Random = None, 
                 call_source_rand: random.Random = None,
+                call_system_time_rand: random.Random = None,
                 log_level: str = 'WARNING'):
         self.main_func = main
         self.main_args = main_args
@@ -80,8 +81,6 @@ class Processor(IProcessor, IProcessorAPI):
         self._token_pool = []
         self._token_queue = []
         self._board_tokens = []
-        self._wait_address = None
-        self._wait_token = None
         self._call_stack_token = None
         self._token_queue_rand = config.call_queue_rand
         self._token_source_rand = config.call_source_rand
@@ -113,7 +112,7 @@ class Processor(IProcessor, IProcessorAPI):
 
     @staticmethod
     def mp_create(config: ProcessorConfig, mp_context: Any, 
-                  create_paused = False) -> multiprocessing.Process:
+                  create_paused = False) -> ProcessorIPC:
         master_conn, child_conn = mp_context.Pipe()
         proc_args = {'config': config, 'conn': child_conn}
         process = mp_context.Process(target=Processor._mp_process_func, 
@@ -154,12 +153,6 @@ class Processor(IProcessor, IProcessorAPI):
     @property
     def time(self) -> Time:
         return self.steps_to_time(self._step_counter)
-
-    def wait(self, wait_on_address: Address, 
-             partial_result: CallResult = CallResult()) -> CallResult:
-        self._wait_address = wait_on_address
-        self._wait_token = copy.copy(self._call_stack_token)
-        return partial_result
 
     def exit(self, exit_result: CallResult = CallResult()) -> CallResult:
         self._has_exited = True
@@ -216,7 +209,7 @@ class Processor(IProcessor, IProcessorAPI):
         tokens = [Token(call).stamp(time) for call in result.calls]
         self._put_tokens(tokens)
 
-    def do_call(self, address: Address, token: Token) -> None:
+    def _do_call(self, address: Address, token: Token) -> None:
         self._call_stack_proc_addr = copy.copy(address)
         self._call_stack_token = token
         result = self.get_proc(address).call(token.call.arg, token, self.api)
@@ -226,7 +219,7 @@ class Processor(IProcessor, IProcessorAPI):
     def _pop_call_queue_token(self, busy_wait_step_count: int = 1) -> None:
         if len(self._token_queue) != 0:
             token = self._token_queue.pop()
-            self.do_call(token.target, token)
+            self._do_call(token.target, token)
         else:
             if busy_wait_step_count > 0:
                 logging.info('busy wait')
@@ -281,47 +274,12 @@ class Processor(IProcessor, IProcessorAPI):
                                                 self._step_counter, jump_step))
             self._step_counter = jump_step
 
-    def _end_wait(self) -> None:
-        if self._wait_token:
-            self._wait_token.stamp(self.time)
-            print('XXXXX', self._wait_token.call.arg)
-            self.do_call(self._wait_token.target, self._wait_token)
-            self._wait_token = None
-    
-    def _check_is_waiting(self) -> bool:
-        if self._wait_address is None:
-            return False
-        logging.error('blocked waiting')
-        unblocking_tokens = [x for x in self._token_pool 
-                             if x.target.matches(self._wait_address)]
-        if len(unblocking_tokens) == 0:
-            return True
-        logging.debug('wait unblocked')
-        ready_steps = [self._get_token_ready_step(x) 
-                       for x in unblocking_tokens]
-        ready_step = min(ready_steps)
-        earliest_step = min([self._get_token_ready_step(x) 
-                             for x in self._token_pool])
-        if earliest_step < ready_step:
-            logging.warning('tokens accumulated while waiting')
-        tokens_to_put = [x for x in unblocking_tokens if 
-                         self._get_token_ready_step(x) == ready_step]
-        self._put_tokens(tokens_to_put)
-        self._wait_address = None
-        return False
-
-    def is_waiting(self) -> bool:
-        return self._wait_address is not None            
-
     def has_work(self) -> bool:
         return (len(self._token_pool) + len(self._token_queue) 
                 + len(self._board_tokens)) > 0
 
     def step(self, board_tokens: List[Token]=[]) -> None:
         self._put_tokens(board_tokens)
-        if self._check_is_waiting():
-            return
         self._idle_jump_to_ready_tokens()
         self._enqueue_ready_tokens()
         self._pop_call_queue_token()
-        self._end_wait()

@@ -48,28 +48,18 @@ class DoubleFeedProc(Procedure):
 
 
 class ComputeActor(Actor):
-    def __init__(self, use_protocol: bool = False):
-        super().__init__('compute', [Data1Proc(self, use_protocol), 
-                                     Data2Proc(self)])
+    def __init__(self):
+        super().__init__('compute', [Data1Proc(self), Data2Proc(self)])
         self.accum = []
 
 
 class Data1Proc(Procedure):
-    def __init__(self, actor: ComputeActor, use_protocol: bool = False):
+    def __init__(self, actor: ComputeActor):
         super().__init__('data1')
         self._actor = actor
-        self._use_protocol = use_protocol
 
     def call(self, arg: CallArg, __, proxor: IProcessorAPI) -> CallResult:
-        print('ZZZ', arg)
         result = [arg, self._actor.accum]
-        if self._use_protocol:
-            if len (self._actor.accum) < 2:
-                logging.warning('active protocol synch')
-                return proxor.wait(Address(proc='data2'))
-            #elif len (self._actor.accum) >= 4:
-            #    logging.error('PROTOCOL ERROR')
-            #    return proxor.exit()
         self._actor.accum = []
         return CallResult([Call(result, Address(processor='D', actor='sink'))])
 
@@ -120,30 +110,27 @@ def source_B_main(processor: Processor) -> None:
     processor.put_calls([Call(None, Address(actor='source'))])
 
 
-def compute_main(processor: Processor, use_protocol: bool) -> None:
-    processor.add_actor(ComputeActor(use_protocol))
+def compute_main(processor: Processor) -> None:
+    processor.add_actor(ComputeActor())
 
 
 def sink_main(processor: Processor) -> None:
     processor.add_actor(SinkActor())
 
-def create_board(log_lvl: str = 'WARNING', profile=None, 
-                 use_protocol: bool = False) -> Board:
+def create_board(log_lvl: str = 'WARNING', profile=None) -> Board:
     processor_configs = [
         ProcessorConfig(name='A', main=source_A_main, log_level=log_lvl), 
         ProcessorConfig(name='B', main=source_B_main, log_level=log_lvl), 
-        ProcessorConfig(name='C', main=compute_main, log_level=log_lvl,
-                        main_args={'use_protocol':use_protocol}), 
+        ProcessorConfig(name='C', main=compute_main, log_level=log_lvl), 
         ProcessorConfig(name='D', main=sink_main, log_level=log_lvl)
         ]
     
     return Board(processor_configs, profile_filepath=profile)
 
 
-def run(log_lvl: str = 'WARNING', sim_time = 5.0, profile = None,
-        use_protocol: bool = False):
+def run(log_lvl: str = 'WARNING', sim_time = 5.0, profile = None):
     print('=== best-effort-race ===')
-    board = create_board(log_lvl, profile, use_protocol)
+    board = create_board(log_lvl, profile)
     start = timeit.default_timer()
     while not board.any_exited():
         board.step()
@@ -165,7 +152,6 @@ def process_args() -> Any:
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--log", default='WARNING')
     parser.add_argument("--run_count", default=1, type=int)
-    parser.add_argument("--use_protocol", action='store_true')
     parser.add_argument("-p", "--profile", default=None)
     parser.add_argument("--sim_time", default=5, type=int)
     parser.add_argument('-h', '--help', action='help', 
@@ -184,7 +170,7 @@ def main():
         my_dir = os.path.dirname(__file__)
         args.profile = os.path.join(my_dir, 'best_effort_race_random.json')
     for _ in range(args.run_count):
-        run(args.log, args.sim_time, args.profile, args.use_protocol)
+        run(args.log, args.sim_time, args.profile)
 
 
 if __name__ == "__main__":

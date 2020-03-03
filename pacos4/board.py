@@ -69,9 +69,8 @@ class Board:
             self._forward_tokens(step_msg.board_tokens)
             proc_state.snap = step_msg.state_snap
 
-    def _barrier_time(self, consider_waiters: bool) -> Time:
-        return (min([x.snap.time for x in self._proc_states
-                     if (not consider_waiters or not x.snap.is_waiting)]) 
+    def _barrier_time(self) -> Time:
+        return (min([x.snap.time for x in self._proc_states]) 
                 + self._time_precision)
 
     def _is_steppable(self, proc_index: int, barrier_time: Time) -> bool:
@@ -79,11 +78,17 @@ class Board:
         return not snap.has_exited and snap.time <= barrier_time
 
     def step(self) -> List[Time]:
-        barrier_time = self._barrier_time(True)
+        barrier_time = self._barrier_time()
         steppable_indices = [i for i in range(len(self._proc_states)) 
                              if self._is_steppable(i, barrier_time)]
         self._step_parall(steppable_indices)
         return [proc_state.snap.time for proc_state in self._proc_states]
+
+    def all_idle(self) -> bool:
+        return all([not x.snap.has_work for x in self._proc_states])
+    
+    def any_idle(self) -> bool:
+        return any([not x.snap.has_work for x in self._proc_states])
 
     def all_exited(self) -> bool:
         return all([x.snap.has_exited for x in self._proc_states])
