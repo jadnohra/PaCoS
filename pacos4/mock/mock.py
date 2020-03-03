@@ -16,7 +16,7 @@ from pacos4.board import Board
 
 
 class MockCallGenConfig:
-    def __init__(self, type: str, address: Address):
+    def __init__(self, address: Address):
         self.address = address
 
 
@@ -189,15 +189,36 @@ def parse_mock_config(mock_file: str) -> MockBoardConfig:
             else:
                 config.actor_configs.append(parse_actor(lines, li_ref))
         return config
+    def find_proc_config(configs: List[MockProcessorConfig], address: Address
+                         ) -> MockProcedureConfig:
+        for config in configs:
+            if config.name == address.processor:
+                for actor_config in config.actor_configs:
+                    if actor_config.name == address.actor:
+                        for proc_config in actor_config.proc_configs:
+                            if proc_config.name == address.proc:
+                                return proc_config
+                        break
+                break
+    def parse_connection(configs: List[MockProcessorConfig], line) -> None:
+        left, right = [x.strip() for x in line.split('->') if len(x)]
+        left_addr = Address.create_from_expression(left)
+        right_addr = Address.create_from_expression(right)
+        proc_config = find_proc_config(configs, left_addr)
+        proc_config.call_gen_configs.append(MockCallGenConfig(right_addr))
+    def parse_connections(configs: List[MockProcessorConfig], 
+                          lines, li_ref) -> None:
+        li_ref[0] = li_ref[0] + 1
+        while (li_ref[0] < len(lines)
+                and is_indent_level(2, lines[li_ref[0]])):
+            parse_connection(configs, lines[li_ref[0]])
+            li_ref[0] = li_ref[0] + 1
     def parse_board(lines, li) -> MockBoardConfig:
         processor_configs = []
         li_ref = [li]
         while li_ref[0] < len(lines):
             if lines[li_ref[0]].strip() == '_connections':
-                li_ref[0] = li_ref[0] + 1
-                while (li_ref[0] < len(lines)
-                       and is_indent_level(2, lines[li_ref[0]])):
-                    li_ref[0] = li_ref[0] + 1
+               parse_connections(processor_configs, lines, li_ref)
             else:
                 processor_configs.append(parse_processor(lines, li_ref))
         return MockBoardConfig(processor_configs)
@@ -209,6 +230,7 @@ def parse_mock_config(mock_file: str) -> MockBoardConfig:
     with open(mock_file) as fi:
         lines = [x.rstrip() for x in fi.readlines() if len(x.strip())]
     return parse_root(lines)
+
 
 def run(mock_file: str, parse_only: bool = False, log_lvl: str='WARNING', 
         sim_time: float = 2.0, app_time: float = 2.0, profile: str = None):

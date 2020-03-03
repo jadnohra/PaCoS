@@ -6,3 +6,7 @@ _board
             timer
                 type: periodic 
                 freq: 1
+        sink
+            sink
+    _connections
+        A.timer.timer -> A.sink.sink
