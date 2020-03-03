@@ -119,6 +119,8 @@ class MockActor(Actor):
 def mock_processor_main(processor: Processor, config: MockProcessorConfig
                         ) -> None:
     actors = [MockActor(x) for x in config.actor_configs]
+    for actor in actors:
+        processor.add_actor(actor)
     init_calls = []
     for actor in actors:
         for proc in actor.procedures:
