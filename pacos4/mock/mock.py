@@ -207,13 +207,15 @@ def parse_mock_config(mock_file: str) -> MockBoardConfig:
         lines = [x.rstrip() for x in fi.readlines() if len(x.strip())]
     return parse_root(lines)
 
-def run(mock_file: str, log_lvl: str='WARNING', sim_time: float = 2.0, 
-        app_time: float = 2.0, profile: str = None):
+def run(mock_file: str, parse_only: bool = False, log_lvl: str='WARNING', 
+        sim_time: float = 2.0, app_time: float = 2.0, profile: str = None):
     print('=== {} ==='.format(os.path.basename(mock_file)))
     board_config = parse_mock_config(mock_file)
-    import json
-    print(json.dumps(board_config, default=lambda o: o.__dict__, indent=4))
-    sys.exit(0)
+    if parse_only:
+        import json
+        print(json.dumps(board_config, default=lambda o: o.__dict__, 
+                         indent=4))
+        return
     board = mock_create_board(board_config, log_lvl, profile)
     start = timeit.default_timer()
     while not board.any_exited():
@@ -232,6 +234,7 @@ def run(mock_file: str, log_lvl: str='WARNING', sim_time: float = 2.0,
 def process_args() -> Any:
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("file")
+    parser.add_argument("--parse", action='store_true')
     parser.add_argument("--log", default='WARNING')
     parser.add_argument("--run_count", default=1, type=int)
     parser.add_argument("-p", "--profile", default=None)
@@ -247,7 +250,8 @@ def process_args() -> Any:
 def main():
     args = process_args()
     for _ in range(args.run_count):
-        run(args.file, args.log, args.sim_time, args.app_time, args.profile)
+        run(args.file, args.parse, args.log, args.sim_time, args.app_time, 
+            args.profile)
 
 
 if __name__ == "__main__":
