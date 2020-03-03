@@ -24,6 +24,7 @@ class MockProcedureConfig:
     def __init__(self, type: str, name: str, actor_name: str, 
                  call_gen_configs: List[MockCallGenConfig],
                  timer_freq: float = None):
+        self.type = type
         self.name = name
         self.actor_name = actor_name
         self.call_gen_configs = call_gen_configs
@@ -75,14 +76,14 @@ class MockProcedureConnector(Procedure):
                  for x in self._call_gens]
         return CallResult([x for x in calls if x is not None])
 
-    def gen_init_calls(self) -> List[Call]:
+    def gen_init_calls(self, proxor: IProcessorAPI) -> List[Call]:
         return []
 
 
 class MockProcedurePeriodic(MockProcedureConnector):
     def __init__(self, config: MockProcedureConfig):
         super().__init__(config)
-        self._timer_freq = config.freq
+        self._timer_freq = float(config.freq)
         
 
     def call(self, arg: CallArg, __, proxor: IProcessorAPI) -> CallResult:
@@ -91,7 +92,7 @@ class MockProcedurePeriodic(MockProcedureConnector):
         return result
 
     def gen_init_calls(self, proxor: IProcessorAPI) -> List[Call]:
-        return self.create_timer_call(proxor, immediate=True)
+        return [self.create_timer_call(proxor, immediate=True)]
 
     def create_timer_call(self, proxor: IProcessorAPI, 
                           immediate: bool = False) -> Call:
@@ -121,7 +122,7 @@ def mock_processor_main(processor: Processor, config: MockProcessorConfig
     init_calls = []
     for actor in actors:
         for proc in actor.procedures:
-            init_calls.extend(proc.gen_init_calls())
+            init_calls.extend(proc.gen_init_calls(processor.api))
     if len(init_calls):
         processor.put_calls(init_calls)
 
@@ -132,7 +133,7 @@ def mock_create_board(config: MockBoardConfig, log_lvl: str = 'WARNING',
         ProcessorConfig(name=x.name, main=mock_processor_main, 
                         main_args={'config': x}, 
                         log_level=(x.log_level if x.log_level else log_lvl),
-                        frequency=float(x.frequency))
+                        frequency=float(x.freq))
         for x in config.processor_configs]
     return Board(processor_configs, profile_filepath=profile)
 
