@@ -27,7 +27,7 @@ class MockProcedureConfig:
         self.name = name
         self.actor_name = actor_name
         self.call_gen_configs = call_gen_configs
-        self.timer_freq = timer_freq
+        self.freq = timer_freq
 
 
 class MockActorConfig:
@@ -82,7 +82,7 @@ class MockProcedureConnector(Procedure):
 class MockProcedurePeriodic(MockProcedureConnector):
     def __init__(self, config: MockProcedureConfig):
         super().__init__(config)
-        self._timer_freq = config.timer_freq
+        self._timer_freq = config.freq
         
 
     def call(self, arg: CallArg, __, proxor: IProcessorAPI) -> CallResult:
@@ -132,19 +132,86 @@ def mock_create_board(config: MockBoardConfig, log_lvl: str = 'WARNING',
         ProcessorConfig(name=x.name, main=mock_processor_main, 
                         main_args={'config': x}, 
                         log_level=(x.log_level if x.log_level else log_lvl),
-                        frequency=x.frequency)
+                        frequency=float(x.frequency))
         for x in config.processor_configs]
     return Board(processor_configs, profile_filepath=profile)
 
 
 def parse_mock_config(mock_file: str) -> MockBoardConfig:
-    return None
+    def indent_level(line) -> int:
+        i = 0
+        level = 0
+        while (i < len(line) and line[i:i+4] == '    '):
+            level = level + 1
+            i = i + 4
+        return level
+    def is_indent_level(level, line) -> bool:
+        return indent_level(line) == level
+    def parse_attr(line):
+        return [x.strip() for x in line.strip().split(':')]
+    def parse_proc(actor_name, lines, li_ref) -> MockProcedureConfig:
+        config = MockProcedureConfig(None, None, actor_name, [])
+        config.name = lines[li_ref[0]].strip()
+        li_ref[0] = li_ref[0] + 1
+        while (li_ref[0] < len(lines)
+               and is_indent_level(4, lines[li_ref[0]])):
+            k, v = parse_attr(lines[li_ref[0]])
+            setattr(config, k, v)
+            li_ref[0] = li_ref[0] + 1
+        return config
+    def parse_actor(lines, li_ref) -> MockActorConfig:
+        config = MockActorConfig(None, [])
+        config.name = lines[li_ref[0]].strip()
+        li_ref[0] = li_ref[0] + 1
+        while (li_ref[0] < len(lines)
+               and is_indent_level(3, lines[li_ref[0]])):
+                config.proc_configs.append(parse_proc(config.name, 
+                                                      lines, li_ref))
+        return config
+    def parse_processor_config(config: MockProcessorConfig, lines, li_ref
+                               ) -> None:
+        li_ref[0] = li_ref[0] + 1
+        while is_indent_level(3, lines[li_ref[0]]):
+            k, v = parse_attr(lines[li_ref[0]])
+            setattr(config, k, v)
+            li_ref[0] = li_ref[0] + 1
+    def parse_processor(lines, li_ref) -> MockProcessorConfig:
+        config = MockProcessorConfig(None, 0.0, [], None)
+        config.name = lines[li_ref[0]].strip()
+        li_ref[0] = li_ref[0] + 1
+        while (li_ref[0] < len(lines)
+               and is_indent_level(2, lines[li_ref[0]])):
+            if lines[li_ref[0]].strip() == '_config':
+                parse_processor_config(config, lines, li_ref)
+            else:
+                config.actor_configs.append(parse_actor(lines, li_ref))
+        return config
+    def parse_board(lines, li) -> MockBoardConfig:
+        processor_configs = []
+        li_ref = [li]
+        while li_ref[0] < len(lines):
+            if lines[li_ref[0]].strip() == '_connections':
+                li_ref[0] = li_ref[0] + 1
+            else:
+                processor_configs.append(parse_processor(lines, li_ref))
+        return MockBoardConfig(processor_configs)
+    def parse_root(lines, li=0) -> MockBoardConfig:
+        if lines[li] == '_board':
+            return parse_board(lines, li+1)
+        return None
 
+    with open(mock_file) as fi:
+        lines = [x.rstrip() for x in fi.readlines()]
+    return parse_root(lines)
 
 def run(mock_file: str, log_lvl: str='WARNING', sim_time: float = 2.0, 
         app_time: float = 2.0, profile: str = None):
     print('=== {} ==='.format(os.path.basename(mock_file)))
-    board = mock_create_board(parse_mock_config(mock_file), log_lvl, profile)
+    board_config = parse_mock_config(mock_file)
+    import json
+    print(json.dumps(board_config, default=lambda o: o.__dict__, indent=4))
+    sys.exit(0)
+    board = mock_create_board(board_config, log_lvl, profile)
     start = timeit.default_timer()
     while not board.any_exited():
         proc_times = board.step()

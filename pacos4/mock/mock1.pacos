@@ -1,0 +1,8 @@
+_board
+    A
+        _config
+            freq: 10
+        timer
+            timer
+                type: periodic 
+                freq: 1
