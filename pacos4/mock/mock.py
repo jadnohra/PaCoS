@@ -192,6 +192,9 @@ def parse_mock_config(mock_file: str) -> MockBoardConfig:
         while li_ref[0] < len(lines):
             if lines[li_ref[0]].strip() == '_connections':
                 li_ref[0] = li_ref[0] + 1
+                while (li_ref[0] < len(lines)
+                       and is_indent_level(2, lines[li_ref[0]])):
+                    li_ref[0] = li_ref[0] + 1
             else:
                 processor_configs.append(parse_processor(lines, li_ref))
         return MockBoardConfig(processor_configs)
@@ -201,7 +204,7 @@ def parse_mock_config(mock_file: str) -> MockBoardConfig:
         return None
 
     with open(mock_file) as fi:
-        lines = [x.rstrip() for x in fi.readlines()]
+        lines = [x.rstrip() for x in fi.readlines() if len(x.strip())]
     return parse_root(lines)
 
 def run(mock_file: str, log_lvl: str='WARNING', sim_time: float = 2.0, 
