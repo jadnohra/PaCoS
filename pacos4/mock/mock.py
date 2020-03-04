@@ -26,7 +26,9 @@ class MockProcedureConfig:
                  timer_freq: float = None,
                  timer_freq_tolerance: float = None,
                  steps: Any = None,
-                 steps_tolerance: Any = None):
+                 steps_tolerance: Any = None,
+                 sleep: float = None,
+                 sleep_tolerance: float = None):
         self.type = type
         self.name = name
         self.actor_name = actor_name
@@ -35,6 +37,8 @@ class MockProcedureConfig:
         self.timer_freq_tolerance = timer_freq_tolerance
         self.steps = steps
         self.steps_tolerance = steps_tolerance
+        self.sleep = sleep
+        self.sleep_tolerance = sleep_tolerance
 
 
 class MockActorConfig:
@@ -76,10 +80,17 @@ class MockProcedureConnector(Procedure):
         self._rand = None
         self._step_count = 1
         self._step_count_tolerance = 0
+        self._sleep = 0
+        self._sleep_tolerance = 0
         if config.steps:
             self._step_count = int(config.steps)
         if config.steps_tolerance:
             self._step_count_tolerance = float(config.steps_tolerance)
+            self.ensure_rand()
+        if config.sleep:
+            self._sleep = float(config.sleep)
+        if config.sleep_tolerance:
+            self._sleep_tolerance = float(config.sleep_tolerance)
             self.ensure_rand()
 
     def _jitter_step_count(self) -> 0:
@@ -88,10 +99,21 @@ class MockProcedureConnector(Procedure):
         return self._rand.randint(-self._step_count_tolerance, 
                                   self._step_count_tolerance)
 
+    def _jitter_sleep(self) -> 0:
+        if self._sleep_tolerance == 0:
+            return 0
+        return self._rand.random() * self._sleep_tolerance
+
+    def _do_sleep(self) -> None:
+        if self._sleep == 0:
+            return
+        time.sleep(self._sleep + self._jitter_sleep())
+
     def call(self, arg: CallArg, __, proxor: IProcessorAPI) -> CallResult:
         logging.warning('{}.{} : {}'.format(self._actor_name, self.name, 
                                             self._call_counter))
         self._call_counter = self._call_counter + 1
+        self._do_sleep()
         calls = [x.gen_call(self._call_counter, proxor)
                  for x in self._call_gens]
         step_count = self._step_count + self._jitter_step_count()
