@@ -236,6 +236,10 @@ def parse_mock_config(mock_file: str) -> MockBoardConfig:
                 v, tol = parse_tolerance(v)
                 config.steps = v
                 config.steps_tolerance = tol
+            elif k == 'sleep':
+                v, tol = parse_tolerance(v)
+                config.sleep = v
+                config.sleep_tolerance = tol
             else:
                 setattr(config, k, v)
             li_ref[0] = li_ref[0] + 1
