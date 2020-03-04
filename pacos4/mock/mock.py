@@ -6,6 +6,7 @@ import time
 import timeit
 import os
 import random
+import enum
 from pacos4.token import Address, Token
 from pacos4.call import CallArg, Call, CallResult
 from pacos4.procedure import Procedure, IProcessorAPI, IProcedure
@@ -28,7 +29,8 @@ class MockProcedureConfig:
                  steps: Any = None,
                  steps_tolerance: Any = None,
                  sleep: float = None,
-                 sleep_tolerance: float = None):
+                 sleep_tolerance: float = None,
+                 emit_skips: int = 0):
         self.type = type
         self.name = name
         self.actor_name = actor_name
@@ -39,6 +41,7 @@ class MockProcedureConfig:
         self.steps_tolerance = steps_tolerance
         self.sleep = sleep
         self.sleep_tolerance = sleep_tolerance
+        self.emit_skips = emit_skips
 
 
 class MockActorConfig:
@@ -82,6 +85,8 @@ class MockProcedureConnector(Procedure):
         self._step_count_tolerance = 0
         self._sleep = 0
         self._sleep_tolerance = 0
+        self.emit_skips = 0
+        self._emit_counter = 0
         if config.steps:
             self._step_count = int(config.steps)
         if config.steps_tolerance:
@@ -91,6 +96,10 @@ class MockProcedureConnector(Procedure):
             self._sleep = float(config.sleep)
         if config.sleep_tolerance:
             self._sleep_tolerance = float(config.sleep_tolerance)
+            self.ensure_rand()
+        if config.emit_skips is not None:
+            self._emit_skips = int(config.emit_skips)
+        if self._emit_skips != 0:
             self.ensure_rand()
 
     def _jitter_step_count(self) -> 0:
@@ -109,13 +118,26 @@ class MockProcedureConnector(Procedure):
             return
         time.sleep(self._sleep + self._jitter_sleep())
 
+    def _should_emit(self) -> bool:
+        if self._emit_skips == 0:
+            return True
+        if self._emit_counter >= self._emit_skips:
+            self._emit_counter = 0
+            return True
+        self._emit_counter = self._emit_counter + 1
+        return False
+
     def call(self, arg: CallArg, __, proxor: IProcessorAPI) -> CallResult:
         logging.warning('{}.{} : {}'.format(self._actor_name, self.name, 
                                             self._call_counter))
         self._call_counter = self._call_counter + 1
         self._do_sleep()
-        calls = [x.gen_call(self._call_counter, proxor)
-                 for x in self._call_gens]
+        should_emit = self._should_emit()
+        if should_emit:
+            calls = [x.gen_call(self._call_counter, proxor)
+                     for x in self._call_gens]
+        else:
+            calls = []
         step_count = self._step_count + self._jitter_step_count()
         return CallResult([x for x in calls if x is not None],
                           max(1, step_count))
@@ -282,19 +304,27 @@ def parse_mock_config(mock_file: str) -> MockBoardConfig:
                                 return proc_config
                         break
                 break
-    def parse_connection(configs: List[MockProcessorConfig], line) -> None:
+    def parse_connection_config():
+        pass
+    def parse_connection(configs: List[MockProcessorConfig], lines, li_ref
+                         ) -> None:
+        line = lines[li_ref[0]]
         left, right = [x.strip() for x in line.split('->') if len(x)]
         left_addr = Address.create_from_expression(left)
         right_addr = Address.create_from_expression(right)
         proc_config = find_proc_config(configs, left_addr)
         proc_config.call_gen_configs.append(MockCallGenConfig(right_addr))
+        li_ref[0] = li_ref[0] + 1
+        while (li_ref[0] < len(lines)
+                and is_indent_level(3, lines[li_ref[0]])):
+            parse_connection_config()  # TODO
+            li_ref[0] = li_ref[0] + 1
     def parse_connections(configs: List[MockProcessorConfig], 
                           lines, li_ref) -> None:
         li_ref[0] = li_ref[0] + 1
         while (li_ref[0] < len(lines)
                 and is_indent_level(2, lines[li_ref[0]])):
-            parse_connection(configs, lines[li_ref[0]])
-            li_ref[0] = li_ref[0] + 1
+            parse_connection(configs, lines, li_ref)
     def parse_board(lines, li) -> MockBoardConfig:
         processor_configs = []
         li_ref = [li]
