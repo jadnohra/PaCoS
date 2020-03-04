@@ -12,6 +12,9 @@ class INamed(ABC):
     @abstractproperty
     def name(self) -> str:
         pass
+    
+    def dbg_on_exit(self, address: Address = None) -> None:
+        pass
 
 
 class ProcessorSnapshot:
@@ -70,7 +73,7 @@ class IActor(INamed):
         pass
 
 
-class IProcessor:
+class IProcessor(INamed):
     @abstractmethod
     def step(self, board_tokens: List[Token]=[]) -> None:
         pass

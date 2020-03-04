@@ -78,6 +78,9 @@ class MockProcedureConnector(Procedure):
 
     def gen_init_calls(self, proxor: IProcessorAPI) -> List[Call]:
         return []
+    
+    def dbg_on_exit(self, address: Address = None) -> None:
+        print(str(address), self._call_counter)
 
 
 class MockProcedurePeriodic(MockProcedureConnector):
@@ -260,7 +263,7 @@ def process_args() -> Any:
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("file")
     parser.add_argument("--parse", action='store_true')
-    parser.add_argument("--log", default='WARNING')
+    parser.add_argument("--log", default='ERROR')
     parser.add_argument("--run_count", default=1, type=int)
     parser.add_argument("-p", "--profile", default=None)
     parser.add_argument("--sim_time", default=2.0, type=float)

@@ -133,6 +133,7 @@ class Processor(IProcessor, IProcessorAPI):
                                           processor.snap()))
             else:
                 break
+        processor.dbg_on_exit()
 
     @property
     def name(self) -> str:
@@ -283,3 +284,10 @@ class Processor(IProcessor, IProcessorAPI):
         self._idle_jump_to_ready_tokens()
         self._enqueue_ready_tokens()
         self._pop_call_queue_token()
+        
+    def dbg_on_exit(self) -> None:
+        for actor in self._actors:
+            actor.dbg_on_exit(Address(processor=self.name, actor=actor.name))
+            for proc in actor.procedures:
+                proc.dbg_on_exit(Address(processor=self.name, actor=actor.name,
+                                         proc=proc.name))
