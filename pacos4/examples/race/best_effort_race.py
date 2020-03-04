@@ -129,7 +129,8 @@ def create_board(log_lvl: str = 'WARNING', profile=None) -> Board:
 
 
 def run(log_lvl: str = 'WARNING', sim_time = 5.0, profile = None):
-    print('=== best-effort-race ===')
+    profile_name = '({})'.format(os.path.basename(profile)) if profile else ''
+    print('=== best-effort-race {} ==='.format(profile_name))
     board = create_board(log_lvl, profile)
     start = timeit.default_timer()
     while not board.any_exited():
@@ -164,11 +165,13 @@ def process_args() -> Any:
     return args
 
 
-def main():
+def main(profile: str =  'best_effort_race_random.json'):
     args = process_args()
     if args.profile is None:
+        args.profile = profile
+    if args.profile and not os.path.isabs(args.profile):
         my_dir = os.path.dirname(__file__)
-        args.profile = os.path.join(my_dir, 'best_effort_race_random.json')
+        args.profile = os.path.join(my_dir, args.profile)
     for _ in range(args.run_count):
         run(args.log, args.sim_time, args.profile)
 

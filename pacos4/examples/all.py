@@ -17,3 +17,4 @@ if __name__ == "__main__":
     main_timer_race()
     main_data_race()
     main_best_effort_race()
+    main_best_effort_race(profile='best_effort_race_constant.json')

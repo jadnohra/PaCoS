@@ -76,7 +76,13 @@ class Processor {
 Processor --> ProcessorConfig
 Processor --> ProcessorIPC
 Processor ..> IProcessor
+Processor o.. IActor
+IActor o.. IProcedure
 IProcessor *--> IProcessorAPI
+IProcedure --> Call
+IProcedure --> CallResult
+ProcessorIPC --> Token
+Board o.. Processor
 
 class ProcessorConfig {
     Callable[Processor, Any] main_func
