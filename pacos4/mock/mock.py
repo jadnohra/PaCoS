@@ -23,12 +23,18 @@ class MockCallGenConfig:
 class MockProcedureConfig:
     def __init__(self, type: str, name: str, actor_name: str, 
                  call_gen_configs: List[MockCallGenConfig],
-                 timer_freq: float = None):
+                 timer_freq: float = None,
+                 timer_freq_tolerance: float = None,
+                 steps: Any = None,
+                 steps_tolerance: Any = None):
         self.type = type
         self.name = name
         self.actor_name = actor_name
         self.call_gen_configs = call_gen_configs
         self.freq = timer_freq
+        self.timer_freq_tolerance = timer_freq_tolerance
+        self.steps = steps
+        self.steps_tolerance = steps_tolerance
 
 
 class MockActorConfig:
@@ -67,6 +73,20 @@ class MockProcedureConnector(Procedure):
         self._call_counter = 0
         self._call_gens = [MockCallGenerator(x) 
                            for x in config.call_gen_configs]
+        self._rand = None
+        self._step_count = 1
+        self._step_count_tolerance = 0
+        if config.steps:
+            self._step_count = int(config.steps)
+        if config.steps_tolerance:
+            self._step_count_tolerance = float(config.steps_tolerance)
+            self.ensure_rand()
+
+    def _jitter_step_count(self) -> 0:
+        if self._step_count_tolerance == 0:
+            return 0
+        return self._rand.randint(-self._step_count_tolerance, 
+                                  self._step_count_tolerance)
 
     def call(self, arg: CallArg, __, proxor: IProcessorAPI) -> CallResult:
         logging.warning('{}.{} : {}'.format(self._actor_name, self.name, 
@@ -74,10 +94,16 @@ class MockProcedureConnector(Procedure):
         self._call_counter = self._call_counter + 1
         calls = [x.gen_call(self._call_counter, proxor)
                  for x in self._call_gens]
-        return CallResult([x for x in calls if x is not None])
+        step_count = self._step_count + self._jitter_step_count()
+        return CallResult([x for x in calls if x is not None],
+                          max(1, step_count))
 
     def gen_init_calls(self, proxor: IProcessorAPI) -> List[Call]:
         return []
+    
+    def ensure_rand(self) -> None:
+        if self._rand is None:
+            self._rand = random.Random()
     
     def dbg_on_exit(self, address: Address = None) -> None:
         print(str(address), self._call_counter)
@@ -87,6 +113,10 @@ class MockProcedurePeriodic(MockProcedureConnector):
     def __init__(self, config: MockProcedureConfig):
         super().__init__(config)
         self._timer_freq = float(config.freq)
+        self._timer_freq_tolerance = 0
+        if config.timer_freq_tolerance:
+            self._timer_freq_tolerance = float(config.timer_freq_tolerance)
+            self.ensure_rand()
         
 
     def call(self, arg: CallArg, __, proxor: IProcessorAPI) -> CallResult:
@@ -97,9 +127,19 @@ class MockProcedurePeriodic(MockProcedureConnector):
     def gen_init_calls(self, proxor: IProcessorAPI) -> List[Call]:
         return [self.create_timer_call(proxor, immediate=True)]
 
+    def _jitter_call_steps(self, proxor: IProcessorAPI) -> 0:
+        if self._timer_freq_tolerance == 0:
+            return 0
+        jitter_step_mag = int(proxor.frequency / self._timer_freq_tolerance)
+        return self._rand.randint(-jitter_step_mag, jitter_step_mag)
+
     def create_timer_call(self, proxor: IProcessorAPI, 
                           immediate: bool = False) -> Call:
-        call_step_count = max(1, int(proxor.frequency / self._timer_freq))
+        call_step_count = int(proxor.frequency / self._timer_freq)
+        if call_step_count <= 0:
+             raise ValueError("Period freq {} to high for processor freq {}".
+                              format(self._timer_freq, proxor.frequency)) 
+        call_step_count = call_step_count + self._jitter_call_steps(proxor)
         call_step = (0 if immediate 
                      else (call_step_count + proxor.step_count))
         return Call(None, Address(actor=self._actor_name, proc=self.name), 
