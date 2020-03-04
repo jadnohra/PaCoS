@@ -1,5 +1,5 @@
 import sys
-from typing import List, Any
+from typing import List, Any, Tuple
 import logging
 import argparse
 import time
@@ -31,7 +31,7 @@ class MockProcedureConfig:
         self.name = name
         self.actor_name = actor_name
         self.call_gen_configs = call_gen_configs
-        self.freq = timer_freq
+        self.timer_freq = timer_freq
         self.timer_freq_tolerance = timer_freq_tolerance
         self.steps = steps
         self.steps_tolerance = steps_tolerance
@@ -112,7 +112,7 @@ class MockProcedureConnector(Procedure):
 class MockProcedurePeriodic(MockProcedureConnector):
     def __init__(self, config: MockProcedureConfig):
         super().__init__(config)
-        self._timer_freq = float(config.freq)
+        self._timer_freq = float(config.timer_freq)
         self._timer_freq_tolerance = 0
         if config.timer_freq_tolerance:
             self._timer_freq_tolerance = float(config.timer_freq_tolerance)
@@ -195,6 +195,10 @@ def parse_mock_config(mock_file: str) -> MockBoardConfig:
         return indent_level(line) == level
     def parse_attr(line):
         return [x.strip() for x in line.strip().split(':')]
+    def parse_tolerance(line) -> Tuple[Any, Any]:
+        if '~' not in line:
+            return [line, None] 
+        return line.split('~')
     def parse_proc(actor_name, lines, li_ref) -> MockProcedureConfig:
         config = MockProcedureConfig(None, None, actor_name, [])
         config.name = lines[li_ref[0]].strip()
@@ -202,7 +206,16 @@ def parse_mock_config(mock_file: str) -> MockBoardConfig:
         while (li_ref[0] < len(lines)
                and is_indent_level(4, lines[li_ref[0]])):
             k, v = parse_attr(lines[li_ref[0]])
-            setattr(config, k, v)
+            if k == 'freq':
+                v, tol = parse_tolerance(v)
+                config.timer_freq = v
+                config.timer_freq_tolerance = tol
+            elif k == 'steps':
+                v, tol = parse_tolerance(v)
+                config.steps = v
+                config.steps_tolerance = tol
+            else:
+                setattr(config, k, v)
             li_ref[0] = li_ref[0] + 1
         return config
     def parse_actor(lines, li_ref) -> MockActorConfig:
